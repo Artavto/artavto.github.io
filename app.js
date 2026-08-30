@@ -670,11 +670,81 @@ var ICON = {
 /* Кнопка з написом «що це» і «куди веде»: людина має розуміти, що
    станеться після натискання, ще до натискання. */
 function talkBtn(kind, title, sub, href, blank) {
-  return '<a class="tb" href="' + esc(href) + '"' +
+  return '<a class="tb" href="' + esc(href) + '" data-kind="' + kind + '"' +
     (blank ? ' target="_blank" rel="noopener"' : '') + '>' +
     '<span class="ic">' + ICON[kind] + '</span>' +
     '<span class="tx"><b>' + esc(title) + '</b><i>' + esc(sub) + '</i></span>' +
     '</a>';
+}
+
+/* Читаємо Telegram щоразу, а не один раз при завантаженні: порядок
+   завантаження скриптів — не те, на що варто спиратись. */
+function tgApp() {
+  try { return (window.Telegram && window.Telegram.WebApp) || null; }
+  catch (e) { return null; }
+}
+
+/* Усередині Telegram звичайне посилання нікуди не веде: вебперегляд не
+   випускає ні tel:, ні зовнішній сайт. Для сайту й Telegram у нього є
+   свої виклики, а для телефона — немає жодного.
+
+   Тому на телефон робимо дві дії одразу: пробуємо відкрити набирач і
+   копіюємо номер. Якщо набирач відкрився — людина його вже не побачить.
+   Якщо ні — номер у неї в буфері, і про це сказано. Головне, щоб
+   натискання ніколи не лишалось без наслідків. */
+function talkGo(e, a) {
+  var kind = a.dataset.kind, href = a.getAttribute('href');
+  var T = tgApp();
+
+  if (kind === 'tg' && T && T.openTelegramLink) {
+    e.preventDefault(); T.openTelegramLink(href); return;
+  }
+  if (kind === 'site' && T && T.openLink) {
+    e.preventDefault(); T.openLink(href); return;
+  }
+  if (kind !== 'phone') return;
+
+  var num = href.replace(/^tel:/, '');
+  copyNum(num);
+  try { window.location.href = href; } catch (err) {}
+  e.preventDefault();
+  say(a, 'Номер скопійовано: ' + phoneText(num));
+}
+
+function copyNum(num) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(num); return;
+    }
+  } catch (e) {}
+  /* Запасний спосіб для старих вебпереглядів: поле мусить бути в
+     сторінці, інакше на iPhone копіювання мовчки не спрацює. */
+  try {
+    var t = document.createElement('textarea');
+    t.value = num;
+    t.style.cssText = 'position:fixed;left:-9999px;top:0';
+    document.body.appendChild(t);
+    t.select(); t.setSelectionRange(0, 99);
+    document.execCommand('copy');
+    document.body.removeChild(t);
+  } catch (e) {}
+}
+
+/* Коротке повідомлення під кнопкою. Своє, а не alert: alert у Telegram
+   виглядає як помилка застосунку. */
+var SAY_T = 0;
+function say(near, text) {
+  var box = $('#saidIt');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'saidIt';
+    box.className = 'said';
+    document.body.appendChild(box);
+  }
+  box.textContent = text;
+  box.className = 'said on';
+  clearTimeout(SAY_T);
+  SAY_T = setTimeout(function () { box.className = 'said'; }, 2600);
 }
 
 function drawContacts() {
@@ -700,6 +770,10 @@ function drawContacts() {
     '<h2>Маєте питання<u></u></h2>' +
     (out.length ? '<div class="links">' + out.join('') + '</div>' : '') +
     (c.note ? '<div class="hint">' + esc(c.note) + '</div>' : '');
+
+  [].forEach.call(box.querySelectorAll('a.tb'), function (a) {
+    a.addEventListener('click', function (e) { talkGo(e, a); });
+  });
 }
 
 function drawSum() {
