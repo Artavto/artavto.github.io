@@ -112,6 +112,15 @@
     </div>
 
     <div class="card glass">
+      <h2><span class="step"><span>7</span></span>Бот у Telegram<u></u></h2>
+      <div class="exp" style="margin:0 0 12px">Одне натискання — і бот починає
+        відповідати на повідомлення та показує кнопку «Калькулятор». Потрібне
+        один раз, а також після зміни адреси застосунку.</div>
+      <button class="btn sec" id="hook">Підʼєднати бота</button>
+      <div class="msg hide" id="hookMsg"></div>
+    </div>
+
+    <div class="card glass">
       <button class="btn" id="save">Зберегти</button>
       <button class="btn sec" id="undo">Повернути як було</button>
       <div class="msg hide" id="saveMsg"></div>
@@ -432,6 +441,15 @@ $('#undo').addEventListener('click', function () {
     CFG = d.cfg; drawAll();
     show('saveMsg', 'Повернуто як було.', 'ok');
   });
+});
+
+$('#hook').addEventListener('click', function () {
+  show('hookMsg', 'Підʼєдную…', 'inf');
+  api('/admin/hook', {}).then(function (d) {
+    if (!d.ok) return show('hookMsg', d.error || 'Не вдалось', 'er');
+    show('hookMsg', 'Готово. Бот ' + d.bot + ' відповідає, кнопка меню ' +
+      (d.button ? 'встановлена' : 'не встановилась') + '.', 'ok');
+  }).catch(function () { show('hookMsg', 'Сервер не відповідає', 'er'); });
 });
 
 $('#drop').addEventListener('click', function () { $('#file').click(); });

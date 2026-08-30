@@ -132,7 +132,10 @@ function calc() {
     add(g4, 'Акциз', c.excise, c.exNote);
     add(g4, 'ПДВ', c.vat, CFG.vatPct + '%');
   } else {
-    r.need = r.need.concat(c.need);
+    /* Ціну лоту питає і розрахунок, і митниця — щоб у підказці вона не
+       стояла двічі, беремо лише те, чого ще немає в переліку. */
+    for (var i = 0; i < c.need.length; i++)
+      if (r.need.indexOf(c.need[i]) < 0) r.need.push(c.need[i]);
   }
   r.groups.push(g4);
 
