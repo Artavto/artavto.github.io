@@ -677,7 +677,7 @@ function drawSum() {
   hero.className = 'hero';
   hero.innerHTML = '<div class="lb">Разом під ключ</div>' +
     '<div class="big">' + money(r.total) + '<em>USD</em></div>' +
-    '<div class="uah">' + uah + ' ₴ за курсом ' + CFG.usd + '</div>';
+    '<div class="uah">' + uah + ' ₴ за курсом ' + esc(CFG.usd) + '</div>';
 
   $('#bar').innerHTML =
     '<div><div class="lb">Разом під ключ</div>' +
