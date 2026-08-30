@@ -32,6 +32,7 @@ var S = {
   cc: null,         // обʼєм двигуна, см³
   kwh: null,        // ємність батареї, кВт·год
   body: 'sedan',    // sedan | suv | big
+  car: null,        // що знайшлось за номером лоту
 };
 
 var AUC = [
@@ -61,6 +62,10 @@ function esc(s) {
 function money(n) {
   return '$' + Math.round(n || 0).toLocaleString('uk-UA').replace(/ /g, ' ');
 }
+/* Те саме, але без долара — для пробігу й інших не-грошей. */
+function thou(n) {
+  return Math.round(n || 0).toLocaleString('uk-UA').replace(/ /g, '\u00A0');
+}
 function num(v) {
   var x = parseFloat(String(v == null ? '' : v).replace(',', '.').replace(/[^\d.]/g, ''));
   return isFinite(x) ? x : null;
@@ -76,6 +81,26 @@ function stateOf(l) {
   return m ? m[1] : '';
 }
 
+/* Збір аукціону зі ставки. Сходинки: до якої суми — який збір; понад
+   останню береться відсоток. Зверху ворота, екозбір і збір за ставку.
+   Точні цифри в кожного аукціону свої й міняються — тому вони не тут,
+   а в адмінці, і власник тримає їх у відповідності до свого кабінету. */
+function auctionFee(price) {
+  var g = (CFG.fees && CFG.fees[S.auc]) || null;
+  if (!g) return null;
+  var out = { base: 0, gate: g.gate || 0, env: g.env || 0, bid: g.bid || 0, pct: false };
+  var steps = g.steps || [];
+  for (var i = 0; i < steps.length; i++) {
+    if (price <= steps[i][0]) { out.base = steps[i][1]; break; }
+  }
+  if (!out.base) {
+    out.base = Math.round(price * (g.pct || 0) / 100);
+    out.pct = true;
+  }
+  out.total = out.base + out.gate + out.env + out.bid;
+  return out;
+}
+
 /* ------------------------------------------------------------------ */
 /* РОЗРАХУНОК                                                          */
 /* ------------------------------------------------------------------ */
@@ -89,7 +114,9 @@ function calc() {
     r.total += sum;
   };
 
-  var lot = S.lot || 0, fee = S.fee || 0;
+  var lot = S.lot || 0;
+  var auto = (CFG.feeMode !== 'manual') ? auctionFee(lot) : null;
+  var fee = auto ? auto.total : (S.fee || 0);
   var st = stateOf(S.loc);
   var isEV = S.fuel === 'electric' || S.fuel === 'hybrid';
   var isBig = S.body === 'suv' || S.body === 'big';
@@ -98,7 +125,14 @@ function calc() {
   var g1 = { t: 'Авто на аукціоні', rows: [] };
   if (!lot) r.need.push('ціну лоту');
   add(g1, 'Ціна лоту', lot);
-  add(g1, 'Збір аукціону', fee);
+  if (auto && lot) {
+    add(g1, 'Збір аукціону', auto.base, auto.pct ? (CFG.fees[S.auc].pct + '% від ставки') : 'за шкалою');
+    add(g1, 'Ворота', auto.gate);
+    add(g1, 'Екологічний збір', auto.env);
+    add(g1, 'Збір за ставку', auto.bid);
+  } else {
+    add(g1, 'Збір аукціону', fee);
+  }
   add(g1, 'Комісія партнера', CFG.partnerFee);
   if (CFG.closedStates.states.indexOf(st) > -1)
     add(g1, 'Закритий штат (' + st + ')', CFG.closedStates.fee);
@@ -139,9 +173,26 @@ function calc() {
   }
   r.groups.push(g4);
 
-  /* --- 5. комісія --- */
+  /* --- 5. комісія й довільні надбавки --- */
   var g5 = { t: 'Послуги', rows: [] };
   add(g5, 'Комісія АРТ АВТО', CFG.commission);
+
+  /* Те, чого не було в первинних умовах. Власник додає рядок в адмінці,
+     і він одразу тут — без правки коду й без нової заливки. */
+  var ex = CFG.extras || [];
+  for (var i = 0; i < ex.length; i++) {
+    var e = ex[i];
+    if (!e || !e.v) continue;
+    var fit =
+      e.when === 'always'  ? true :
+      e.when === 'suv'     ? S.body === 'suv' :
+      e.when === 'big'     ? S.body === 'big' :
+      e.when === 'ev'      ? S.fuel === 'electric' :
+      e.when === 'hybrid'  ? S.fuel === 'hybrid' :
+      e.when === 'diesel'  ? S.fuel === 'diesel' :
+      e.when === 'canada'  ? S.auc === 'canada' : false;
+    if (fit) add(g5, e.n, e.v);
+  }
   r.groups.push(g5);
 
   r.ready = r.need.length === 0;
@@ -167,8 +218,15 @@ function landCost() {
    Електромобілі мита не платять зовсім — тільки акциз за кВт·год і ПДВ. */
 function customs() {
   var out = { ok: false, need: [], duty: 0, excise: 0, vat: 0, exNote: '' };
-  var lot = S.lot || 0, fee = S.fee || 0;
+  var lot = S.lot || 0;
   if (!lot) { out.need.push('ціну лоту'); return out; }
+
+  /* Митна вартість = ціна лоту + збір аукціону + фрахт. Збір мусить бути
+     ТОЙ САМИЙ, що в розрахунку вище: якщо взяти тут порожнє ручне поле,
+     мито, акциз і ПДВ порахуються з меншої суми — і людина недоплатить
+     на митниці, дізнавшись про це вже на кордоні. */
+  var au = (CFG.feeMode !== 'manual') ? auctionFee(lot) : null;
+  var fee = au ? au.total : (S.fee || 0);
 
   var base = lot + fee + CFG.customsShip;
   var eur = CFG.eur / CFG.usd;          // скільки доларів в одному євро
@@ -181,8 +239,13 @@ function customs() {
   } else {
     if (!S.year) { out.need.push('рік випуску'); return out; }
     if (!S.cc)   { out.need.push('обʼєм двигуна'); return out; }
+    /* Коефіцієнт віку за Податковим кодексом: повні календарні роки від
+       року, наступного за роком випуску. Закон обмежує його з обох боків —
+       не менше 1 і не більше 15. Верхньої межі тут бракувало, і на авто
+       2005 року акциз виходив завищеним на третину. */
     var age = new Date().getFullYear() - S.year - 1;
     if (age < 1) age = 1;
+    if (age > 15) age = 15;
     var t = (S.fuel === 'diesel') ? CFG.exDiesel : CFG.exPetrol;
     var rate = S.cc > t.border ? t.big : t.small;
     out.excise = (S.cc / 1000) * age * rate * eur;
@@ -202,6 +265,116 @@ function portTitle(p) { return CFG.portName[p] || p; }
 /* ------------------------------------------------------------------ */
 /* ЕКРАН                                                               */
 /* ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------
+   Пошук авто за номером лоту або VIN
+   ------------------------------------------------------------------ */
+
+/* Довідник називає філію «sc - columbia», наша таблиця — «SC - Columbia».
+   Звіряємо за повною назвою зі штатом, а НЕ за містом: Columbia у списку
+   дві (Міссурі й Південна Кароліна), і за містом калькулятор мовчки взяв
+   би не ту доставку. Якщо точного збігу немає — краще не підставляти
+   нічого, ніж підставити сусідній штат. */
+function matchBranch(branch) {
+  var b = String(branch || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  if (!b) return null;
+  var groups = ['copart', 'iaai', 'manheim', 'canada'];
+  for (var gi = 0; gi < groups.length; gi++) {
+    var list = LOC[groups[gi]] || [];
+    for (var i = 0; i < list.length; i++) {
+      var n = String(list[i].n || '').toLowerCase().replace(/\s+/g, ' ').trim();
+      if (n === b) return { auc: groups[gi], loc: list[i] };
+    }
+  }
+  return null;
+}
+
+function lotMsg(text, kind) {
+  var e = $('#lotMsg');
+  e.textContent = text || '';
+  e.className = 'msg' + (text ? ' ' + (kind || 'inf') : ' hide');
+}
+
+/* Підставляємо лише те, що знаємо напевно. Порожнє поле людина заповнить
+   сама; невірно підставлене — не помітить, і воно піде в розрахунок. */
+function useCar(c) {
+  S.car = c;
+  if (c.year) S.year = c.year;
+  if (c.cc)   S.cc = c.cc;
+  if (c.fuel) S.fuel = c.fuel;
+  if (c.body) S.body = c.body;
+
+  var m = matchBranch(c.branch);
+  if (m) {
+    S.auc = m.auc;
+    S.loc = m.loc;
+    S.port = null;
+    drawAuctions();
+  }
+
+  $('#year').value = S.year || '';
+  $('#cc').value = S.cc || '';
+  draw();
+
+  var miss = [];
+  if (!m && c.branch) miss.push('майданчик «' + c.branch + '» не знайшовся в таблиці');
+  if (!c.fuel) miss.push('паливо');
+  if (!c.body) miss.push('тип кузова');
+  lotMsg(miss.length
+    ? 'Знайшли. Перевірте вручну: ' + miss.join(', ') + '.'
+    : 'Знайшли. Лишилось вписати ціну лоту й збір аукціону.',
+    miss.length ? 'er' : 'inf');
+}
+
+function drawCarFound() {
+  var box = $('#carBox');
+  if (!S.car) { box.innerHTML = ''; return; }
+  var c = S.car;
+  var bits = [];
+  if (c.odo) bits.push(thou(c.odo) + ' миль');
+  if (c.damage) bits.push(c.damage);
+  if (c.branch) bits.push(c.branch.toUpperCase());
+  box.innerHTML =
+    '<div class="car">' +
+      (c.photo ? '<img src="' + esc(c.photo) + '" alt="" loading="lazy">' : '') +
+      '<div><b>' + esc(c.title || 'Авто') + '</b>' +
+      '<small><span class="lotno">' + esc(c.lotNo || '') + '</span>' +
+        (bits.length ? ' · ' + esc(bits.join(' · ')) : '') + '</small>' +
+      (c.vin ? '<small>' + esc(c.vin) + '</small>' : '') +
+      '</div>' +
+    '</div>';
+}
+
+function seekLot() {
+  var q = String($('#lotq').value || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  if (q.length < 6) { lotMsg('Вкажіть номер лоту (8 цифр) або VIN (17 знаків).', 'er'); return; }
+  if (!window.ART_API) { lotMsg('Пошук недоступний — заповніть поля вручну.', 'er'); return; }
+
+  $('#lotgo').disabled = true;
+  lotMsg('Шукаю…', 'inf');
+
+  var done = false;
+  var t = setTimeout(function () {
+    if (done) return;
+    done = true; $('#lotgo').disabled = false;
+    lotMsg('Довго немає відповіді. Заповніть поля вручну.', 'er');
+  }, 15000);
+
+  fetch(ART_API.replace(/\/+$/, '') + '/lot?v=' + encodeURIComponent(q), { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (done) return;
+      done = true; clearTimeout(t); $('#lotgo').disabled = false;
+      if (!d || !d.ok) { S.car = null; drawCarFound(); lotMsg((d && d.error) || 'Не знайшли.', 'er'); return; }
+      useCar(d.car);
+      drawCarFound();
+    })
+    .catch(function () {
+      if (done) return;
+      done = true; clearTimeout(t); $('#lotgo').disabled = false;
+      lotMsg('Пошук не відповідає. Заповніть поля вручну.', 'er');
+    });
+}
+
 function drawAuctions() {
   $('#auc').innerHTML = AUC.map(function (a) {
     return '<option value="' + a[0] + '"' + (S.auc === a[0] ? ' selected' : '') +
@@ -295,6 +468,37 @@ function drawCar() {
   var ev = S.fuel === 'electric';
   $('#ccBox').style.display = ev ? 'none' : '';
   $('#kwhBox').style.display = ev ? '' : 'none';
+
+  /* Коли збір рахується за шкалою, поле для нього тільки заплутує:
+     людина вписала б своє число, а розрахунок узяв би інше. */
+  var auto = CFG.feeMode !== 'manual' && CFG.fees && CFG.fees[S.auc];
+  $('#feeBox').style.display = auto ? 'none' : '';
+  $('#lotBox').className = auto ? 'fld' : 'fld half';
+}
+
+/* Контакти показуємо тільки якщо власник їх вписав: порожній блок з
+   написом «звʼязок» гірший, ніж його відсутність. */
+function drawContacts() {
+  var c = CFG.contacts || {};
+  var box = $('#contacts');
+  if (!box) return;
+  var out = [];
+  if (c.phone) out.push('<a href="tel:' + esc(c.phone.replace(/[^\d+]/g, '')) + '">' +
+    esc(c.phone) + '</a>');
+  if (c.tg) {
+    var u = c.tg.replace(/^@/, '').replace(/^https?:\/\/t\.me\//, '');
+    out.push('<a href="https://t.me/' + esc(u) + '" target="_blank" rel="noopener">@' + esc(u) + '</a>');
+  }
+  if (c.site) {
+    var w = c.site.replace(/^https?:\/\//, '');
+    out.push('<a href="https://' + esc(w) + '" target="_blank" rel="noopener">' + esc(w) + '</a>');
+  }
+  if (!out.length && !c.note) { box.innerHTML = ''; box.className = ''; return; }
+  box.className = 'card glass talk';
+  box.innerHTML =
+    '<h2>Звʼязатися<u></u></h2>' +
+    (out.length ? '<div class="links">' + out.join('') + '</div>' : '') +
+    (c.note ? '<div class="hint">' + esc(c.note) + '</div>' : '');
 }
 
 function drawSum() {
@@ -333,6 +537,8 @@ function drawSum() {
 }
 
 function draw() {
+  drawContacts();
+  drawCarFound();
   drawPicked();
   drawPorts();
   drawCar();
@@ -348,6 +554,9 @@ function start() {
     draw();
   });
   $('#q').addEventListener('input', function () { drawFound(this.value); });
+
+  $('#lotgo').addEventListener('click', seekLot);
+  $('#lotq').addEventListener('keydown', function (e) { if (e.key === 'Enter') seekLot(); });
 
   [['lot','lot'],['fee','fee'],['year','year'],['cc','cc'],['kwh','kwh']].forEach(function (p) {
     $('#' + p[0]).addEventListener('input', function () { S[p[1]] = num(this.value); drawSum(); });
@@ -388,5 +597,11 @@ start();
     })
     .catch(function () {});
 })();
-window.__art = { get S() { return S; }, calc: calc, draw: draw };
+/* Вікно для перевірок. Тільки читання стану — жодної логіки тут немає,
+   тому воно нічого не може зламати, зате дозволяє прогнати розрахунок
+   на справжньому коді, а не на копії. */
+window.__art = {
+  get S() { return S; }, get CFG() { return CFG; }, get LOC() { return LOC; },
+  calc: calc, draw: draw,
+};
 })();

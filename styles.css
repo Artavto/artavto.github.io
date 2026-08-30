@@ -258,3 +258,76 @@ select{
 .row.tot b{font-size:18px}
 
 .foot{padding:0 6px;margin-top:16px;color:var(--mut);font-size:11.5px;line-height:1.55}
+
+/* ── пошук лота ── */
+.seek{display:flex;gap:9px}
+.seek input{flex:1;min-width:0;text-transform:uppercase}
+.seek input::placeholder{text-transform:none}
+.seek button{
+  flex:0 0 auto;position:relative;overflow:hidden;
+  background:linear-gradient(128deg, var(--blue-lit), var(--blue));
+  color:#fff;border:0;border-radius:var(--r-in);
+  font:inherit;font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  padding:0 17px;cursor:pointer;
+  box-shadow:0 6px 16px -8px rgba(24,88,152,.95);
+}
+.seek button:disabled{opacity:.55;cursor:default}
+.seek button::before{
+  content:"";position:absolute;top:-40%;bottom:-40%;left:52%;width:42%;
+  background:linear-gradient(90deg, rgba(255,255,255,.18), rgba(255,255,255,0));
+  transform:skewX(var(--skew));pointer-events:none;
+}
+
+.msg{border-radius:var(--r-in);padding:10px 13px;font-size:12.5px;line-height:1.45;margin-top:10px}
+.msg.er{background:rgba(180,60,25,.09);color:#9C3A12}
+.msg.inf{background:rgba(24,88,152,.08);color:var(--blue)}
+.msg.hide{display:none}
+
+/* картка знайденого авто */
+.car{
+  display:flex;gap:13px;align-items:flex-start;margin-top:11px;
+  position:relative;overflow:hidden;
+  background:var(--field);border:1px solid var(--field-line);
+  border-radius:var(--r-in);padding:12px 14px 12px 18px;
+}
+.car::before{
+  content:"";position:absolute;left:-6px;top:-6px;bottom:-6px;width:12px;
+  background:linear-gradient(180deg, var(--blue-lit), var(--blue));
+  transform:skewX(var(--skew));
+}
+.car img{
+  width:78px;height:58px;object-fit:cover;border-radius:7px;flex:0 0 auto;
+  background:var(--bg-base);
+}
+.car div{flex:1;min-width:0}
+.car b{display:block;font-size:14px;font-weight:600;line-height:1.3}
+.car small{display:block;color:var(--mut);font-size:11.5px;margin-top:3px;line-height:1.45}
+.car .lotno{
+  font-family:"Onest",system-ui,sans-serif;font-variant-numeric:tabular-nums;
+  color:var(--blue);font-weight:600;
+}
+
+/* ── контакти ── */
+.talk h2{
+  margin:0 0 14px;font-size:10px;font-weight:700;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--text2);
+  display:flex;align-items:center;gap:11px;
+}
+.talk h2 u{flex:1;height:1px;background:var(--field-line);text-decoration:none}
+.talk .links{display:flex;flex-wrap:wrap;gap:9px}
+.talk .links a{
+  flex:1 1 auto;min-width:44%;text-align:center;position:relative;overflow:hidden;
+  background:linear-gradient(128deg, var(--blue-lit), var(--blue));
+  color:#fff;text-decoration:none;border-radius:var(--r-in);
+  padding:13px 14px;font-size:14px;font-weight:600;
+  box-shadow:0 6px 16px -9px rgba(24,88,152,.95);
+}
+.talk .links a::before{
+  content:"";position:absolute;top:-40%;bottom:-40%;left:56%;width:40%;
+  background:linear-gradient(90deg, rgba(255,255,255,.17), rgba(255,255,255,0));
+  transform:skewX(var(--skew));pointer-events:none;
+}
+.talk .hint{margin-top:12px}
+
+/* коли збір рахується сам — поле ставки лишається саме, на всю ширину */
+.fld.half{grid-column:1 / -1}

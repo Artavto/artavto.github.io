@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=20260830-2000">
+<link rel="stylesheet" href="styles.css?v=20260831-0110">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -24,7 +24,25 @@
   <div class="hero" id="hero"></div>
 
   <div class="card glass">
-    <h2><span class="step"><span>1</span></span>Звідки авто<u></u></h2>
+    <h2><span class="step"><span>1</span></span>Знайти авто<u></u></h2>
+
+    <div class="fld">
+      <label for="lotq">Номер лоту або VIN</label>
+      <div class="seek">
+        <input id="lotq" type="text" placeholder="55123456 або 1N4AL3AP8FC430610"
+               autocomplete="off" autocapitalize="characters" spellcheck="false">
+        <button type="button" id="lotgo">Знайти</button>
+      </div>
+      <div class="msg hide" id="lotMsg"></div>
+      <div id="carBox"></div>
+    </div>
+
+    <div class="hint">Знайдемо авто, підставимо рік, двигун, паливо, кузов
+      і майданчик. Не знаєте номера — заповніть поля нижче вручну.</div>
+  </div>
+
+  <div class="card glass">
+    <h2><span class="step"><span>2</span></span>Звідки авто<u></u></h2>
 
     <div class="fld">
       <label for="auc">Аукціон</label>
@@ -45,14 +63,14 @@
   </div>
 
   <div class="card glass">
-    <h2><span class="step"><span>2</span></span>Авто<u></u></h2>
+    <h2><span class="step"><span>3</span></span>Авто<u></u></h2>
 
     <div class="two">
-      <div class="fld">
-        <label for="lot">Ціна лоту, $</label>
+      <div class="fld" id="lotBox">
+        <label for="lot">Ваша ставка на аукціоні, $</label>
         <input id="lot" type="text" inputmode="decimal" placeholder="8500">
       </div>
-      <div class="fld">
+      <div class="fld" id="feeBox">
         <label for="fee">Збір аукціону, $</label>
         <input id="fee" type="text" inputmode="decimal" placeholder="900">
       </div>
@@ -89,9 +107,11 @@
   </div>
 
   <div class="card glass" id="sumCard" style="display:none">
-    <h2><span class="step"><span>3</span></span>З чого складається<u></u></h2>
+    <h2><span class="step"><span>4</span></span>З чого складається<u></u></h2>
     <div class="rows" id="rows"></div>
   </div>
+
+  <div id="contacts"></div>
 
   <div class="foot">
     Розрахунок орієнтовний. Остаточна сума залежить від курсу на день розмитнення
@@ -103,7 +123,7 @@
 <!-- Адреса сервера. Якщо він недоступний — калькулятор працює на
      вбудованих даних нижче, просто без свіжих ставок. -->
 <script>window.ART_API = "https://art-avto.tovartauto.workers.dev";</script>
-<script src="data.js?v=20260830-2000"></script>
-<script src="app.js?v=20260830-2000"></script>
+<script src="data.js?v=20260831-0110"></script>
+<script src="app.js?v=20260831-0110"></script>
 </body>
 </html>

@@ -30,6 +30,71 @@
   .msg.er{background:rgba(180,60,25,.10);color:#9C3A12}
   .msg.inf{background:rgba(24,88,152,.09);color:var(--blue)}
   .msg.hide{display:none}
+  .msg.pre{white-space:pre-wrap}
+  .btn.hide{display:none}
+
+  /* Вкладки. Панель віддано замовнику, а не розробнику: одна довга
+     стрічка з двадцяти полів лякає й ховає те, що шукаєш. */
+  .tabs{
+    display:flex;gap:6px;margin:0 0 14px;padding:5px;
+    background:var(--glass);border:1px solid var(--glass-line);
+    border-radius:14px;box-shadow:var(--sh);
+    position:sticky;top:8px;z-index:6;
+  }
+  .tabs button{
+    flex:1;min-width:0;position:relative;overflow:hidden;
+    background:none;border:0;border-radius:10px;cursor:pointer;
+    font:inherit;font-size:11px;font-weight:700;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--text2);padding:10px 4px;
+    white-space:nowrap;text-overflow:ellipsis;
+  }
+  .tabs button:hover{color:var(--blue)}
+  .tabs button.on{
+    color:#fff;
+    background:linear-gradient(128deg, var(--blue-lit), var(--blue));
+    box-shadow:0 5px 13px -7px rgba(24,88,152,.95);
+  }
+  .tabs button.on::before{
+    content:"";position:absolute;top:-40%;bottom:-40%;left:52%;width:44%;
+    background:linear-gradient(90deg, rgba(255,255,255,.17), rgba(255,255,255,0));
+    transform:skewX(var(--skew));pointer-events:none;
+  }
+  .tab.hide{display:none}
+  /* Смуга збереження закріплена внизу — правки бувають на будь-якій
+     вкладці, і кнопка не має тікати за екран. Але саме тому вона мусить
+     бути вузькою: у два поверхи вона зʼїдала третину телефона. */
+  .card.keep{position:sticky;bottom:10px;z-index:5;padding:12px 13px}
+  .card.keep .row2{display:flex;gap:9px}
+  .card.keep .btn{padding:12px 10px;font-size:14px}
+  .card.keep .btn{flex:2;min-width:0}
+  .card.keep .btn.sec{flex:1;font-size:12.5px}
+  .card.keep .btn + .btn{margin-top:0}
+  .card.keep .msg{margin-top:9px;padding:9px 12px;font-size:12.5px}
+
+  .btn.sm{padding:11px;font-size:13px}
+  .btn.sec.dang{color:#9C3A12}
+  .btn.sec.dang:hover{border-color:#9C3A12;background:rgba(180,60,25,.06)}
+  .row2{display:flex;gap:9px}
+  .row2 .btn{flex:1;min-width:0}
+  .row2 .btn + .btn{margin-top:0}
+
+  /* Рядок сходинки й рядок надбавки. Хрестик прибирає рядок — це
+     звичніше, ніж «стерти значення, щоб зникло». */
+  .line{display:flex;gap:8px;align-items:center;margin-bottom:9px}
+  .line input{flex:1;min-width:0;font-size:15px;padding:11px 12px}
+  .line select{flex:1;min-width:0;font-size:14px;padding:11px 12px}
+  .line .cap{
+    flex:0 0 auto;font-size:10.5px;font-weight:700;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--mut);white-space:nowrap;
+  }
+  .line .x{
+    flex:0 0 auto;width:34px;height:34px;border-radius:8px;cursor:pointer;
+    background:none;border:1px solid var(--field-line);color:var(--mut);
+    font:inherit;font-size:16px;line-height:1;
+  }
+  .line .x:hover{border-color:#9C3A12;color:#9C3A12}
+  .line.wide{flex-wrap:wrap}
+  .line.wide input.nm{flex:1 1 100%}
   .drop{
     border:1.5px dashed var(--field-line);border-radius:var(--r-in);
     padding:22px 16px;text-align:center;color:var(--mut);font-size:13.5px;
@@ -68,37 +133,119 @@
   <!-- ── сама панель ── -->
   <div id="panel" style="display:none">
 
+    <div class="tabs" id="tabs">
+      <button type="button" class="on" data-t="price">Ціни</button>
+      <button type="button" data-t="auction">Збори</button>
+      <button type="button" data-t="customs">Митниця</button>
+      <button type="button" data-t="table">Таблиця</button>
+      <button type="button" data-t="bot">Звʼязок</button>
+    </div>
+
+    <div class="tab" data-t="price">
+
     <div class="card glass">
-      <h2><span class="step"><span>1</span></span>Море до Клайпеди<u></u></h2>
+      <h2>Море до Клайпеди<u></u></h2>
       <div class="exp" style="margin:0 0 14px">Скільки коштує морська доставка від
         кожного порту США. Наземна доставка до порту береться з таблиці партнерів — вона нижче.</div>
       <div class="grid5" id="seaBox"></div>
     </div>
 
     <div class="card glass">
-      <h2><span class="step"><span>2</span></span>Надбавки<u></u></h2>
+      <h2>Надбавки<u></u></h2>
       <div id="feeBox"></div>
     </div>
 
     <div class="card glass">
-      <h2><span class="step"><span>3</span></span>Європа й комісія<u></u></h2>
+      <h2>Європа й комісія<u></u></h2>
       <div id="euBox"></div>
     </div>
 
     <div class="card glass">
-      <h2><span class="step"><span>4</span></span>Митниця<u></u></h2>
+      <h2>Свої надбавки<u></u></h2>
+      <div class="exp" style="margin:0 0 12px">Усе, чого немає вище. Впишіть назву,
+        суму й коли вона застосовується — і воно одразу зʼявиться в розрахунку
+        клієнта. Відʼємна сума працює як знижка.</div>
+      <div id="exBox"></div>
+      <button class="btn sec sm" id="exAdd">Додати надбавку</button>
+    </div>
+
+    </div><!-- /ціни -->
+
+    <div class="tab hide" data-t="auction">
+
+    <div class="card glass">
+      <h2>Збір аукціону<u></u></h2>
+      <div class="exp" style="margin:0 0 12px">Скільки аукціон бере понад ставку.
+        Рахується за сходинками: якщо ставка не більша за суму в рядку — береться
+        збір із цього рядка. Понад останню сходинку береться відсоток.</div>
+
+      <div class="fld">
+        <label for="feeMode">Як рахувати</label>
+        <select id="feeMode">
+          <option value="table">За шкалою — клієнт нічого не вписує</option>
+          <option value="manual">Вручну — клієнт вписує збір сам</option>
+        </select>
+      </div>
+
+      <div class="fld">
+        <label for="aucPick">Який аукціон налаштовуємо</label>
+        <select id="aucPick">
+          <option value="copart">Copart</option>
+          <option value="iaai">IAAI</option>
+          <option value="manheim">Manheim</option>
+          <option value="canada">Канада</option>
+        </select>
+      </div>
+
+      <div id="stepBox"></div>
+      <button class="btn sec sm" id="stepAdd">Додати сходинку</button>
+
+      <div class="two" style="margin-top:16px">
+        <div class="fld">
+          <label for="f_pct">Понад останню, %</label>
+          <input id="f_pct" type="text" inputmode="decimal">
+        </div>
+        <div class="fld">
+          <label for="f_gate">Ворота, $</label>
+          <input id="f_gate" type="text" inputmode="decimal">
+        </div>
+        <div class="fld">
+          <label for="f_env">Екологічний збір, $</label>
+          <input id="f_env" type="text" inputmode="decimal">
+        </div>
+        <div class="fld">
+          <label for="f_bid">Збір за ставку, $</label>
+          <input id="f_bid" type="text" inputmode="decimal">
+        </div>
+      </div>
+
+      <div class="msg inf" style="margin-top:14px">Ці цифри я поставив за
+        відкритими джерелами — вони наближені. Звірте зі своїм кабінетом
+        на аукціоні й виправте: саме за ними клієнт побачить суму.</div>
+    </div>
+
+    </div><!-- /збори -->
+
+    <div class="tab hide" data-t="customs">
+
+    <div class="card glass">
+      <h2>Мито, акциз, ПДВ<u></u></h2>
       <div id="cuBox"></div>
     </div>
 
     <div class="card glass">
-      <h2><span class="step"><span>5</span></span>Курси валют<u></u></h2>
+      <h2>Курси валют<u></u></h2>
       <div class="grid5" id="fxBox"></div>
       <div class="exp">Потрібні, щоб перевести акциз із євро й показати підсумок
         у гривні. Оновлюйте раз на тиждень або коли курс помітно зрушив.</div>
     </div>
 
+    </div><!-- /митниця -->
+
+    <div class="tab hide" data-t="table">
+
     <div class="card glass">
-      <h2><span class="step"><span>6</span></span>Таблиця доставки<u></u></h2>
+      <h2>Таблиця доставки<u></u></h2>
       <div class="exp" style="margin:0 0 12px">Файл Excel від партнерів у США —
         ціни від майданчиків до портів. Оновлюється раз на рік: просто перетягніть
         сюди новий файл.</div>
@@ -108,11 +255,42 @@
       </div>
       <input type="file" id="file" accept=".xlsx" style="display:none">
       <div class="msg inf hide" id="tabNow"></div>
-      <div class="msg hide" id="tabMsg"></div>
+      <div class="msg pre hide" id="tabMsg"></div>
+      <button class="btn hide" id="tabOk" style="margin-top:11px">Зберегти цю таблицю</button>
+      <div class="row2" style="margin-top:12px">
+        <button class="btn sec sm" id="tabUndo">Повернути попередню</button>
+        <button class="btn sec sm dang" id="tabClear">Прибрати таблицю</button>
+      </div>
+    </div>
+
+    </div><!-- /таблиця -->
+
+    <div class="tab hide" data-t="bot">
+
+    <div class="card glass">
+      <h2>Контакти для клієнта<u></u></h2>
+      <div class="exp" style="margin:0 0 12px">Показуються під розрахунком.
+        Порожні поля не показуються взагалі.</div>
+      <div class="fld">
+        <label for="f_cPhone">Телефон</label>
+        <input id="f_cPhone" type="text" inputmode="tel" placeholder="+380 XX XXX XX XX">
+      </div>
+      <div class="fld">
+        <label for="f_cTg">Telegram</label>
+        <input id="f_cTg" type="text" placeholder="@artavto">
+      </div>
+      <div class="fld">
+        <label for="f_cSite">Сайт</label>
+        <input id="f_cSite" type="text" placeholder="artavto.com.ua">
+      </div>
+      <div class="fld">
+        <label for="f_cNote">Підпис під контактами</label>
+        <input id="f_cNote" type="text" placeholder="Працюємо з 9:00 до 20:00">
+      </div>
     </div>
 
     <div class="card glass">
-      <h2><span class="step"><span>7</span></span>Бот у Telegram<u></u></h2>
+      <h2>Бот у Telegram<u></u></h2>
       <div class="exp" style="margin:0 0 12px">Одне натискання — і бот починає
         відповідати на повідомлення та показує кнопку «Калькулятор». Потрібне
         один раз, а також після зміни адреси застосунку.</div>
@@ -120,9 +298,13 @@
       <div class="msg hide" id="hookMsg"></div>
     </div>
 
-    <div class="card glass">
-      <button class="btn" id="save">Зберегти</button>
-      <button class="btn sec" id="undo">Повернути як було</button>
+    </div><!-- /бот -->
+
+    <div class="card glass keep">
+      <div class="row2">
+        <button class="btn" id="save">Зберегти</button>
+        <button class="btn sec" id="undo">Повернути</button>
+      </div>
       <div class="msg hide" id="saveMsg"></div>
       <div class="savedAt" id="savedAt"></div>
     </div>
@@ -219,10 +401,119 @@ function drawAll() {
 
   $('#fxBox').innerHTML = FX.map(function (f) { return fld(f[0], f[1], CFG[f[0]]); }).join('');
 
+  FEE = JSON.parse(JSON.stringify(CFG.fees || {}));
+  EXTRAS = JSON.parse(JSON.stringify(CFG.extras || []));
+  $('#feeMode').value = CFG.feeMode === 'manual' ? 'manual' : 'table';
+  $('#aucPick').value = AUC_NOW;
+  drawSteps();
+  drawExtras();
+
+  var c = CFG.contacts || {};
+  $('#f_cPhone').value = c.phone || '';
+  $('#f_cTg').value    = c.tg || '';
+  $('#f_cSite').value  = c.site || '';
+  $('#f_cNote').value  = c.note || '';
+
   var n = LOC ? ['copart', 'iaai', 'manheim', 'canada']
     .reduce(function (s, k) { return s + ((LOC[k] || []).length); }, 0) : 0;
   show('tabNow', n ? ('Зараз у таблиці ' + n + ' майданчиків.')
                    : 'Таблиця ще не завантажена — калькулятор працює на вбудованій копії.', 'inf');
+}
+
+/* ------------------------------------------------------------------
+   Шкала зборів аукціону
+   ------------------------------------------------------------------ */
+/* Правки тримаємо в памʼяті, а не тільки в полях: людина може перемкнути
+   аукціон, поправити інший і повернутись — і має побачити свої зміни, а
+   не те, що прийшло з сервера. */
+var FEE = null;      // копія CFG.fees, з якою працюємо
+var AUC_NOW = 'copart';
+
+function drawSteps() {
+  var g = FEE[AUC_NOW] || { steps: [], pct: 0, gate: 0, env: 0, bid: 0 };
+  $('#stepBox').innerHTML = (g.steps || []).map(function (st, i) {
+    return '<div class="line" data-i="' + i + '">' +
+      '<span class="cap">до $</span>' +
+      '<input class="to" type="text" inputmode="decimal" value="' + esc(st[0]) + '">' +
+      '<span class="cap">збір $</span>' +
+      '<input class="fee" type="text" inputmode="decimal" value="' + esc(st[1]) + '">' +
+      '<button type="button" class="x" title="прибрати">×</button>' +
+    '</div>';
+  }).join('');
+
+  [].forEach.call($('#stepBox').querySelectorAll('.line'), function (row) {
+    var i = +row.dataset.i;
+    row.querySelector('.to').addEventListener('input', function () { grabSteps(); });
+    row.querySelector('.fee').addEventListener('input', function () { grabSteps(); });
+    row.querySelector('.x').addEventListener('click', function () {
+      FEE[AUC_NOW].steps.splice(i, 1); drawSteps();
+    });
+  });
+
+  $('#f_pct').value  = g.pct  != null ? g.pct  : '';
+  $('#f_gate').value = g.gate != null ? g.gate : '';
+  $('#f_env').value  = g.env  != null ? g.env  : '';
+  $('#f_bid').value  = g.bid  != null ? g.bid  : '';
+}
+
+/* Зчитуємо сходинки з полів у памʼять. Не сортуємо тут: людина ще
+   друкує, і рядок під пальцем не має стрибати. Сортує сервер. */
+function grabSteps() {
+  var out = [];
+  [].forEach.call($('#stepBox').querySelectorAll('.line'), function (row) {
+    var to = parseFloat(row.querySelector('.to').value.replace(',', '.'));
+    var fe = parseFloat(row.querySelector('.fee').value.replace(',', '.'));
+    out.push([isFinite(to) ? to : 0, isFinite(fe) ? fe : 0]);
+  });
+  FEE[AUC_NOW].steps = out;
+}
+
+function grabFeeFields() {
+  var g = FEE[AUC_NOW];
+  ['pct', 'gate', 'env', 'bid'].forEach(function (f) {
+    var v = parseFloat(($('#f_' + f).value || '').replace(',', '.'));
+    if (isFinite(v)) g[f] = v;
+  });
+}
+
+/* ------------------------------------------------------------------
+   Свої надбавки
+   ------------------------------------------------------------------ */
+var EXTRAS = [];
+var WHEN = [
+  ['always', 'завжди'],
+  ['suv',    'позашляховик'],
+  ['big',    'пікап / великий'],
+  ['ev',     'електро'],
+  ['hybrid', 'гібрид'],
+  ['diesel', 'дизель'],
+  ['canada', 'аукціон Канада'],
+];
+
+function drawExtras() {
+  $('#exBox').innerHTML = EXTRAS.map(function (e, i) {
+    return '<div class="line wide" data-i="' + i + '">' +
+      '<input class="nm" type="text" placeholder="За що" value="' + esc(e.n || '') + '">' +
+      '<input class="vv" type="text" inputmode="decimal" placeholder="$" value="' + esc(e.v) + '">' +
+      '<select class="wh">' + WHEN.map(function (w) {
+        return '<option value="' + w[0] + '"' + (e.when === w[0] ? ' selected' : '') +
+               '>' + esc(w[1]) + '</option>';
+      }).join('') + '</select>' +
+      '<button type="button" class="x" title="прибрати">×</button>' +
+    '</div>';
+  }).join('');
+
+  [].forEach.call($('#exBox').querySelectorAll('.line'), function (row) {
+    var i = +row.dataset.i;
+    row.querySelector('.nm').addEventListener('input', function () { EXTRAS[i].n = this.value; });
+    row.querySelector('.vv').addEventListener('input', function () {
+      var v = parseFloat(this.value.replace(',', '.')); EXTRAS[i].v = isFinite(v) ? v : 0;
+    });
+    row.querySelector('.wh').addEventListener('change', function () { EXTRAS[i].when = this.value; });
+    row.querySelector('.x').addEventListener('click', function () {
+      EXTRAS.splice(i, 1); drawExtras();
+    });
+  });
 }
 
 function val(id) { var e = $('#f_' + id); return e ? e.value.trim() : ''; }
@@ -238,6 +529,17 @@ function collect() {
   EU.forEach(function (f) { b[f[0]] = val(f[0]); });
   ['customsShip', 'dutyPct', 'vatPct', 'evPerKwh'].forEach(function (k) { b[k] = val(k); });
   FX.forEach(function (f) { b[f[0]] = val(f[0]); });
+
+  grabSteps(); grabFeeFields();
+  b.feeMode = $('#feeMode').value;
+  b.fees = FEE;
+  b.extras = EXTRAS;
+  b.contacts = {
+    phone: $('#f_cPhone').value.trim(),
+    tg:    $('#f_cTg').value.trim(),
+    site:  $('#f_cSite').value.trim(),
+    note:  $('#f_cNote').value.trim(),
+  };
   return b;
 }
 
@@ -298,11 +600,57 @@ function xml(bytes) {
 /* Стовпці кожного аркуша. Підписи в шапці подекуди зіпсовані (у Manheim
    два стовпці названі однаково), тому спираємось на ПОРЯДОК, а не на
    назви — він у всіх трьох аркушах однаковий. */
+/* Порядок стовпців у файлі 2025 року. Це запасний варіант: спершу
+   пробуємо прочитати шапку, і лише коли вона не дає однозначної
+   відповіді — беремо ці букви. Так новий файл з іншим порядком не
+   зіпсує ціни мовчки, а старий читається як читався. */
 var SHEETS = {
   copart:  { i: 1, name: 'A', city: 'B', zip: 'D', p: { NJ: 'E', GA: 'F', FL: 'G', TX: 'H', CA: 'I' } },
   iaai:    { i: 2, name: 'B', city: 'D', zip: 'E', p: { NJ: 'F', GA: 'G', FL: 'H', TX: 'I', CA: 'J' } },
   manheim: { i: 3, name: 'B', city: 'C', zip: 'D', p: { NJ: 'E', GA: 'F', FL: 'G', TX: 'H', CA: 'I' } },
 };
+
+var PORTW = {
+  NJ: /\b(NJ|NY|NEW\s*JERSEY|NEW\s*YORK|NEWARK)\b/,
+  GA: /\b(GA|GEORGIA|SAVANNAH|BRUNSWICK)\b/,
+  FL: /\b(FL|FLORIDA|MIAMI|JACKSONVILLE)\b/,
+  TX: /\b(TX|TEXAS|HOUSTON|GALVESTON)\b/,
+  CA: /\b(CA|CALIF|CALIFORNIA|LOS\s*ANGELES|LONG\s*BEACH)\b/,
+};
+
+/* Читаємо шапку й розкладаємо стовпці по портах. Повертаємо ще й
+   пояснення — його показуємо власнику, бо мовчазне вгадування в таблиці,
+   де від стовпця залежить ціна, це найгірше, що можна зробити. */
+function mapCols(head, fallback) {
+  var got = {}, dup = [], seen = {};
+  for (var col in head) {
+    var h = String(head[col] || '').toUpperCase();
+    if (!h) continue;
+    for (var port in PORTW) {
+      if (!PORTW[port].test(h)) continue;
+      if (seen[port]) { if (dup.indexOf(port) < 0) dup.push(port); }
+      else { seen[port] = col; got[port] = col; }
+    }
+  }
+
+  var have = Object.keys(got).length;
+  var why, cols;
+
+  if (dup.length || have < 4) {
+    cols = fallback.p;
+    why = dup.length
+      ? 'у шапці двічі трапляється ' + dup.join(', ') +
+        ' — узяв порядок стовпців, як у файлі 2025 року'
+      : 'шапку розібрати не вдалось — узяв порядок стовпців, як у файлі 2025 року';
+  } else {
+    cols = got;
+    why = 'стовпці визначені за шапкою';
+  }
+
+  var line = ['NJ', 'GA', 'FL', 'TX', 'CA']
+    .map(function (p) { return cols[p] ? cols[p] + '→' + p : '—→' + p; }).join('  ');
+  return { p: cols, why: why, line: line };
+}
 
 function cellsOf(doc, strings) {
   var rows = [], rs = doc.getElementsByTagName('row');
@@ -343,23 +691,29 @@ async function parseXlsx(file) {
     }
   }
 
-  var loc = {};
+  var loc = {}, notes = [];
   for (var key in SHEETS) {
     var sp = SHEETS[key], f = files['xl/worksheets/sheet' + sp.i + '.xml'];
     var list = [];
     if (f) {
-      cellsOf(xml(f), strings).forEach(function (row) {
+      var all = cellsOf(xml(f), strings);
+      var head = (all[0] && all[0].r === 1) ? all[0].c : {};
+      var m = mapCols(head, sp);
+      notes.push({ sheet: key, line: m.line, why: m.why });
+
+      all.forEach(function (row) {
         if (row.r === 1) return;                       // шапка
         var n = row.c[sp.name];
         if (!n) return;
         var p = {};
-        for (var port in sp.p) { var v = money(row.c[sp.p[port]]); if (v) p[port] = v; }
+        for (var port in m.p) { var v = money(row.c[m.p[port]]); if (v) p[port] = v; }
         if (!Object.keys(p).length) return;
         list.push({ n: n, c: row.c[sp.city] || '', z: row.c[sp.zip] || '', p: p });
       });
     }
     loc[key] = list;
   }
+  loc.__notes = notes;
 
   /* Канада — окремий аркуш з іншою будовою: ціна залежить від кузова. */
   var can = [], f4 = files['xl/worksheets/sheet4.xml'];
@@ -374,27 +728,68 @@ async function parseXlsx(file) {
   return loc;
 }
 
+/* Прочитане чекає підтвердження. Зберігати одразу не можна: від того,
+   який стовпець став яким портом, залежать ціни, і людина мусить це
+   побачити ДО того, як воно поїде клієнтам. */
+var PENDING = null;
+
+var SHEETNAME = { copart: 'Copart', iaai: 'IAAI', manheim: 'Manheim', canada: 'Канада' };
+
 async function takeFile(file) {
   if (!file) return;
   if (!/\.xlsx$/i.test(file.name)) {
     show('tabMsg', 'Потрібен файл .xlsx — саме той, що надсилають партнери.', 'er');
     return;
   }
+  $('#tabOk').classList.add('hide');
   show('tabMsg', 'Читаю файл…', 'inf');
   try {
     var loc = await parseXlsx(file);
-    var n = ['copart', 'iaai', 'manheim', 'canada']
-      .reduce(function (s, k) { return s + loc[k].length; }, 0);
-    show('tabMsg', 'Прочитано ' + n + ' майданчиків. Зберігаю…', 'inf');
-    var d = await api('/admin/table', { loc: loc });
-    if (!d.ok) { show('tabMsg', d.error || 'Не вдалося зберегти.', 'er'); return; }
-    LOC = loc;
-    show('tabMsg', 'Готово. Copart ' + d.by.copart + ' · IAAI ' + d.by.iaai +
-      ' · Manheim ' + d.by.manheim + ' · Канада ' + d.by.canada, 'ok');
-    drawAll();
+    var notes = loc.__notes || [];
+    delete loc.__notes;
+
+    var keys = ['copart', 'iaai', 'manheim', 'canada'];
+    var n = keys.reduce(function (s, k) { return s + (loc[k] || []).length; }, 0);
+    if (!n) { show('tabMsg', 'У файлі не знайшлося жодної ціни. Схоже, це не той файл.', 'er'); return; }
+
+    PENDING = loc;
+
+    var was = LOC ? keys.reduce(function (s, k) { return s + ((LOC[k] || []).length); }, 0) : 0;
+    var rows = keys.map(function (k) {
+      var now = (loc[k] || []).length;
+      var old = LOC ? ((LOC[k] || []).length) : null;
+      var d = (old === null || old === now) ? '' :
+        (now > old ? '  (+' + (now - old) + ')' : '  (' + (now - old) + ')');
+      return SHEETNAME[k] + ' — ' + now + d;
+    });
+
+    var warn = notes.filter(function (x) { return x.why.indexOf('за шапкою') < 0; });
+    var txt = 'Прочитано ' + n + ' майданчиків' + (was ? ' (було ' + was + ')' : '') + '.\n' +
+      rows.join('\n') + '\n\n' +
+      notes.map(function (x) {
+        return SHEETNAME[x.sheet] + ': ' + x.line + '\n   ' + x.why;
+      }).join('\n');
+
+    show('tabMsg', txt, warn.length ? 'er' : 'inf');
+    $('#tabOk').classList.remove('hide');
   } catch (e) {
+    PENDING = null;
     show('tabMsg', 'Не вдалося прочитати файл: ' + (e && e.message ? e.message : e), 'er');
   }
+}
+
+async function saveTable() {
+  if (!PENDING) return;
+  show('tabMsg', 'Зберігаю…', 'inf');
+  try {
+    var d = await api('/admin/table', { loc: PENDING });
+    if (!d.ok) { show('tabMsg', d.error || 'Не вдалося зберегти.', 'er'); return; }
+    LOC = PENDING; PENDING = null;
+    $('#tabOk').classList.add('hide');
+    show('tabMsg', 'Збережено. Copart ' + d.by.copart + ' · IAAI ' + d.by.iaai +
+      ' · Manheim ' + d.by.manheim + ' · Канада ' + d.by.canada, 'ok');
+    drawAll();
+  } catch (e) { show('tabMsg', 'Сервер не відповідає', 'er'); }
 }
 
 /* ------------------------------------------------------------------ */
@@ -441,6 +836,60 @@ $('#undo').addEventListener('click', function () {
     CFG = d.cfg; drawAll();
     show('saveMsg', 'Повернуто як було.', 'ok');
   });
+});
+
+[].forEach.call(document.querySelectorAll('#tabs button'), function (b) {
+  b.addEventListener('click', function () {
+    var t = b.dataset.t;
+    [].forEach.call(document.querySelectorAll('#tabs button'), function (x) {
+      x.classList.toggle('on', x === b);
+    });
+    [].forEach.call(document.querySelectorAll('.tab'), function (x) {
+      x.classList.toggle('hide', x.dataset.t !== t);
+    });
+    window.scrollTo(0, 0);
+  });
+});
+
+$('#aucPick').addEventListener('change', function () {
+  grabSteps(); grabFeeFields();      // не загубити правки поточного
+  AUC_NOW = this.value;
+  drawSteps();
+});
+$('#stepAdd').addEventListener('click', function () {
+  grabSteps();
+  var st = FEE[AUC_NOW].steps;
+  var last = st.length ? st[st.length - 1] : [0, 0];
+  FEE[AUC_NOW].steps.push([last[0] + 1000, last[1] + 50]);
+  drawSteps();
+});
+$('#exAdd').addEventListener('click', function () {
+  EXTRAS.push({ n: '', v: 0, when: 'always' });
+  drawExtras();
+});
+
+$('#tabOk').addEventListener('click', saveTable);
+
+$('#tabClear').addEventListener('click', function () {
+  if (!confirm('Прибрати завантажену таблицю? Калькулятор повернеться на вбудовану.')) return;
+  show('tabMsg', 'Прибираю…', 'inf');
+  api('/admin/table', { clear: true }).then(function (d) {
+    if (!d.ok) return show('tabMsg', d.error || 'Не вдалося', 'er');
+    LOC = null;
+    show('tabMsg', 'Прибрано. Працює вбудована таблиця.', 'ok');
+    drawAll();
+  }).catch(function () { show('tabMsg', 'Сервер не відповідає', 'er'); });
+});
+
+$('#tabUndo').addEventListener('click', function () {
+  show('tabMsg', 'Повертаю…', 'inf');
+  api('/admin/table', { undo: true }).then(function (d) {
+    if (!d.ok) return show('tabMsg', d.error || 'Не вдалося', 'er');
+    show('tabMsg', 'Повернуто: ' + d.count + ' майданчиків.', 'ok');
+    return api('/admin/all').then(function (a) {
+      if (a.ok) { CFG = a.cfg; LOC = a.loc; drawAll(); }
+    });
+  }).catch(function () { show('tabMsg', 'Сервер не відповідає', 'er'); });
 });
 
 $('#hook').addEventListener('click', function () {
