@@ -31,6 +31,24 @@
   .msg.inf{background:rgba(24,88,152,.09);color:var(--blue)}
   .msg.hide{display:none}
   .msg.pre{white-space:pre-wrap}
+
+  /* Галочка. Ціль натискання — увесь рядок, а не квадратик 16 пікселів:
+     на телефоні в нього не влучиш. */
+  .tick{
+    display:flex;align-items:center;gap:12px;cursor:pointer;
+    background:var(--field);border:1px solid var(--field-line);
+    border-radius:var(--r-in);padding:14px;margin:0 0 12px;
+    font-size:15px;font-weight:500;color:var(--text);
+    text-transform:none;letter-spacing:0;
+  }
+  .tick input{width:21px;height:21px;flex:0 0 auto;margin:0;accent-color:var(--blue);cursor:pointer}
+  .tick:hover{border-color:var(--blue)}
+  .tick.sm{padding:11px 13px;margin:0 0 7px;font-size:14px}
+  .grp{
+    font-size:9.5px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--mut);margin:17px 0 8px;
+  }
+  #showBox .grp:first-child{margin-top:2px}
   .btn.hide{display:none}
 
   /* Вкладки. Панель віддано замовнику, а не розробнику: одна довга
@@ -137,6 +155,7 @@
       <button type="button" class="on" data-t="price">Ціни</button>
       <button type="button" data-t="auction">Збори</button>
       <button type="button" data-t="customs">Митниця</button>
+      <button type="button" data-t="show">Показ</button>
       <button type="button" data-t="table">Таблиця</button>
       <button type="button" data-t="bot">Звʼязок</button>
     </div>
@@ -235,12 +254,38 @@
 
     <div class="card glass">
       <h2>Курси валют<u></u></h2>
+      <label class="tick" for="useNbu">
+        <input type="checkbox" id="useNbu">
+        <span>Брати офіційний курс НБУ</span>
+      </label>
+      <div class="exp" style="margin:0 0 14px">Курс підтягується з сайту
+        Національного банку й оновлюється сам. Числа нижче тоді не
+        використовуються — вони лишаються запасними на випадок, коли НБУ
+        не відповідає.</div>
+
+      <div class="msg inf hide" id="nbuNow"></div>
+
       <div class="grid5" id="fxBox"></div>
       <div class="exp">Потрібні, щоб перевести акциз із євро й показати підсумок
-        у гривні. Оновлюйте раз на тиждень або коли курс помітно зрушив.</div>
+        у гривні. Якщо офіційний курс вимкнено — оновлюйте раз на тиждень.</div>
     </div>
 
     </div><!-- /митниця -->
+
+    <div class="tab hide" data-t="show">
+
+    <div class="card glass">
+      <h2>Що бачить клієнт<u></u></h2>
+      <div class="exp" style="margin:0 0 4px">Знята галочка — рядок зникає з
+        розкладу. <b>Сума при цьому лишається в підсумку</b>: вона вливається
+        в перший показаний рядок того ж розділу, щоб стовпчик сходився і
+        клієнт міг скласти цифри й отримати рівно підсумок.</div>
+      <div class="exp" style="margin:0 0 14px">Приклад: знімете «Ворота» й
+        «Екологічний збір» — ці $94 просто додадуться до збору аукціону.</div>
+      <div id="showBox"></div>
+    </div>
+
+    </div><!-- /показ -->
 
     <div class="tab hide" data-t="table">
 
@@ -325,7 +370,7 @@
 
 var API = 'https://art-avto.tovartauto.workers.dev';
 var $ = function (s) { return document.querySelector(s); };
-var KEY = '', CFG = null, LOC = null;
+var KEY = '', CFG = null, LOC = null, NBU_NOW = null;
 
 function show(id, text, kind) {
   var e = $('#' + id);
@@ -413,6 +458,17 @@ function drawAll() {
   $('#f_cTg').value    = c.tg || '';
   $('#f_cSite').value  = c.site || '';
   $('#f_cNote').value  = c.note || '';
+
+  HIDE = JSON.parse(JSON.stringify(CFG.hide || {}));
+  drawShow();
+
+  $('#useNbu').checked = !!CFG.useNbu;
+  if (NBU_NOW) {
+    show('nbuNow', 'Курс НБУ: долар ' + NBU_NOW.usd + ', євро ' + NBU_NOW.eur +
+      (NBU_NOW.day ? ' — на ' + NBU_NOW.day : ''), 'inf');
+  } else {
+    $('#nbuNow').className = 'msg hide';
+  }
 
   var n = LOC ? ['copart', 'iaai', 'manheim', 'canada']
     .reduce(function (s, k) { return s + ((LOC[k] || []).length); }, 0) : 0;
@@ -516,6 +572,74 @@ function drawExtras() {
   });
 }
 
+/* ------------------------------------------------------------------
+   Що показувати клієнту
+   ------------------------------------------------------------------ */
+/* Той самий порядок, що в розкладі застосунку: адмінка має читатись як
+   сам розрахунок, інакше галочки доводиться шукати. */
+var ROWS = [
+  ['—', 'Авто на аукціоні'],
+  ['lot',        'Ціна лоту'],
+  ['fee',        'Збір аукціону'],
+  ['gate',       'Ворота'],
+  ['env',        'Екологічний збір'],
+  ['bid',        'Збір за ставку'],
+  ['partnerFee', 'Комісія партнера'],
+  ['closed',     'Закритий штат'],
+  ['utilMI',     'Утиль (Мічиган)'],
+  ['evFee',      'Електро / гібрид у США'],
+  ['—', 'Доставка до Клайпеди'],
+  ['land',       'Майданчик → порт'],
+  ['sea',        'Море до Клайпеди'],
+  ['haz',        'Небезпечний вантаж'],
+  ['suvSea',     'Великий кузов'],
+  ['—', 'Європа'],
+  ['broker',     'Брокер у Клайпеді'],
+  ['kovel',      'Доставка до Ковеля'],
+  ['—', 'Митні платежі'],
+  ['duty',       'Ввізне мито'],
+  ['excise',     'Акциз'],
+  ['vat',        'ПДВ'],
+  ['—', 'Послуги'],
+  ['commission', 'Комісія АРТ АВТО'],
+];
+
+var HIDE = {};
+
+function drawShow() {
+  var out = [];
+  for (var i = 0; i < ROWS.length; i++) {
+    var k = ROWS[i][0], t = ROWS[i][1];
+    if (k === '—') { out.push('<div class="grp">' + esc(t) + '</div>'); continue; }
+    out.push(
+      '<label class="tick sm" for="h_' + k + '">' +
+        '<input type="checkbox" id="h_' + k + '" data-k="' + k + '"' +
+          (HIDE[k] ? '' : ' checked') + '>' +
+        '<span>' + esc(t) + '</span>' +
+      '</label>');
+  }
+  /* Свої надбавки теж можна ховати — але тільки ті, що вже вписані. */
+  if (EXTRAS.length) {
+    out.push('<div class="grp">Свої надбавки</div>');
+    EXTRAS.forEach(function (e, i) {
+      out.push(
+        '<label class="tick sm" for="h_extra' + i + '">' +
+          '<input type="checkbox" id="h_extra' + i + '" data-k="extra' + i + '"' +
+            (HIDE['extra' + i] ? '' : ' checked') + '>' +
+          '<span>' + esc(e.n || ('надбавка ' + (i + 1))) + '</span>' +
+        '</label>');
+    });
+  }
+  $('#showBox').innerHTML = out.join('');
+
+  [].forEach.call($('#showBox').querySelectorAll('input'), function (c) {
+    c.addEventListener('change', function () {
+      if (c.checked) delete HIDE[c.dataset.k];
+      else HIDE[c.dataset.k] = true;
+    });
+  });
+}
+
 function val(id) { var e = $('#f_' + id); return e ? e.value.trim() : ''; }
 
 function collect() {
@@ -532,6 +656,8 @@ function collect() {
 
   grabSteps(); grabFeeFields();
   b.feeMode = $('#feeMode').value;
+  b.useNbu = $('#useNbu').checked;
+  b.hide = HIDE;
   b.fees = FEE;
   b.extras = EXTRAS;
   b.contacts = {
@@ -801,7 +927,7 @@ function enter() {
     $('#go').disabled = false;
     if (!d.ok) { show('gateErr', d.error || 'Не вдалося увійти', 'er'); return; }
     try { sessionStorage.setItem('artKey', KEY); } catch (e) {}
-    CFG = d.cfg; LOC = d.loc;
+    CFG = d.cfg; LOC = d.loc; NBU_NOW = d.nbu || null;
     $('#gate').style.display = 'none';
     $('#panel').style.display = '';
     drawAll();
@@ -866,6 +992,7 @@ $('#stepAdd').addEventListener('click', function () {
 $('#exAdd').addEventListener('click', function () {
   EXTRAS.push({ n: '', v: 0, when: 'always' });
   drawExtras();
+  drawShow();
 });
 
 $('#tabOk').addEventListener('click', saveTable);

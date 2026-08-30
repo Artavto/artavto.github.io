@@ -108,9 +108,12 @@ function auctionFee(price) {
    так його можна перевірити тестом окремо від оформлення. */
 function calc() {
   var r = { groups: [], total: 0, ready: true, need: [] };
-  var add = function (g, name, sum, note) {
+  /* Ключ потрібен, щоб власник міг сховати саме цей рядок від клієнта.
+     Сума при цьому нікуди не дінеться — вона вллється у сусідній
+     видимий рядок, див. fold() нижче. */
+  var add = function (g, key, name, sum, note) {
     if (!sum) return;
-    g.rows.push({ n: name, v: sum, note: note || '' });
+    g.rows.push({ k: key, n: name, v: sum, note: note || '' });
     r.total += sum;
   };
 
@@ -124,20 +127,20 @@ function calc() {
   /* --- 1. авто --- */
   var g1 = { t: 'Авто на аукціоні', rows: [] };
   if (!lot) r.need.push('ціну лоту');
-  add(g1, 'Ціна лоту', lot);
+  add(g1, 'lot', 'Ціна лоту', lot);
   if (auto && lot) {
-    add(g1, 'Збір аукціону', auto.base, auto.pct ? (CFG.fees[S.auc].pct + '% від ставки') : 'за шкалою');
-    add(g1, 'Ворота', auto.gate);
-    add(g1, 'Екологічний збір', auto.env);
-    add(g1, 'Збір за ставку', auto.bid);
+    add(g1, 'fee', 'Збір аукціону', auto.base, auto.pct ? (CFG.fees[S.auc].pct + '% від ставки') : 'за шкалою');
+    add(g1, 'gate', 'Ворота', auto.gate);
+    add(g1, 'env', 'Екологічний збір', auto.env);
+    add(g1, 'bid', 'Збір за ставку', auto.bid);
   } else {
-    add(g1, 'Збір аукціону', fee);
+    add(g1, 'fee', 'Збір аукціону', fee);
   }
-  add(g1, 'Комісія партнера', CFG.partnerFee);
+  add(g1, 'partnerFee', 'Комісія партнера', CFG.partnerFee);
   if (CFG.closedStates.states.indexOf(st) > -1)
-    add(g1, 'Закритий штат (' + st + ')', CFG.closedStates.fee);
-  if (st === 'MI') add(g1, 'Утиль (Мічиган)', CFG.utilMI);
-  if (isEV) add(g1, 'Електро / гібрид', CFG.evFee);
+    add(g1, 'closed', 'Закритий штат (' + st + ')', CFG.closedStates.fee);
+  if (st === 'MI') add(g1, 'utilMI', 'Утиль (Мічиган)', CFG.utilMI);
+  if (isEV) add(g1, 'evFee', 'Електро / гібрид', CFG.evFee);
   r.groups.push(g1);
 
   /* --- 2. доставка --- */
@@ -145,26 +148,26 @@ function calc() {
   if (!S.loc) r.need.push('майданчик');
   if (!S.port) r.need.push('порт');
   if (S.loc && S.port) {
-    add(g2, 'Майданчик → порт', landCost(), portTitle(S.port));
-    add(g2, 'Море до Клайпеди', CFG.sea[S.port] || 0);
-    if (isEV) add(g2, 'Небезпечний вантаж', CFG.hazFee, 'батарея');
-    if (isBig) add(g2, 'Великий кузов', CFG.suvSea);
+    add(g2, 'land', 'Майданчик → порт', landCost(), portTitle(S.port));
+    add(g2, 'sea', 'Море до Клайпеди', CFG.sea[S.port] || 0);
+    if (isEV) add(g2, 'haz', 'Небезпечний вантаж', CFG.hazFee, 'батарея');
+    if (isBig) add(g2, 'suvSea', 'Великий кузов', CFG.suvSea);
   }
   r.groups.push(g2);
 
   /* --- 3. Європа --- */
   var g3 = { t: 'Європа', rows: [] };
-  add(g3, 'Брокер у Клайпеді', CFG.broker);
-  add(g3, 'Доставка до Ковеля', CFG.kovel);
+  add(g3, 'broker', 'Брокер у Клайпеді', CFG.broker);
+  add(g3, 'kovel', 'Доставка до Ковеля', CFG.kovel);
   r.groups.push(g3);
 
   /* --- 4. митні платежі --- */
   var g4 = { t: 'Митні платежі', rows: [] };
   var c = customs();
   if (c.ok) {
-    add(g4, 'Ввізне мито', c.duty, c.duty ? CFG.dutyPct + '%' : '');
-    add(g4, 'Акциз', c.excise, c.exNote);
-    add(g4, 'ПДВ', c.vat, CFG.vatPct + '%');
+    add(g4, 'duty', 'Ввізне мито', c.duty, c.duty ? CFG.dutyPct + '%' : '');
+    add(g4, 'excise', 'Акциз', c.excise, c.exNote);
+    add(g4, 'vat', 'ПДВ', c.vat, CFG.vatPct + '%');
   } else {
     /* Ціну лоту питає і розрахунок, і митниця — щоб у підказці вона не
        стояла двічі, беремо лише те, чого ще немає в переліку. */
@@ -175,7 +178,7 @@ function calc() {
 
   /* --- 5. комісія й довільні надбавки --- */
   var g5 = { t: 'Послуги', rows: [] };
-  add(g5, 'Комісія АРТ АВТО', CFG.commission);
+  add(g5, 'commission', 'Комісія АРТ АВТО', CFG.commission);
 
   /* Те, чого не було в первинних умовах. Власник додає рядок в адмінці,
      і він одразу тут — без правки коду й без нової заливки. */
@@ -191,12 +194,64 @@ function calc() {
       e.when === 'hybrid'  ? S.fuel === 'hybrid' :
       e.when === 'diesel'  ? S.fuel === 'diesel' :
       e.when === 'canada'  ? S.auc === 'canada' : false;
-    if (fit) add(g5, e.n, e.v);
+    if (fit) add(g5, 'extra' + i, e.n, e.v);
   }
   r.groups.push(g5);
 
   r.ready = r.need.length === 0;
+  fold(r);
   return r;
+}
+
+/* Приховані рядки. Власник може не показувати клієнту окремі збори — але
+   сума мусить лишитись у підсумку, інакше калькулятор бреше.
+
+   Тому прихована сума не зникає, а вливається в перший видимий рядок
+   того ж розділу. Так стовпчик сходиться: клієнт може скласти цифри й
+   отримати рівно підсумок. Якщо в розділі не лишилось жодного видимого
+   рядка — сума переноситься в перший видимий узагалі.
+
+   Ховати ВСЕ не можна: тоді ні підсумок, ні розклад не мали б сенсу.
+   У такому разі показуємо як є. */
+function fold(r) {
+  var hide = CFG.hide || {};
+  var carry = 0, groups = [];
+
+  for (var i = 0; i < r.groups.length; i++) {
+    var g = r.groups[i], vis = [], hid = 0;
+    for (var j = 0; j < g.rows.length; j++) {
+      if (hide[g.rows[j].k]) hid += g.rows[j].v;
+      else vis.push(g.rows[j]);
+    }
+    if (vis.length) {
+      /* Куди саме вливати. Ніколи не в «Ціну лоту»: це єдине число, яке
+         клієнт вписав сам, і побачити там $10 143 замість своїх $10 000 —
+         однозначно виглядає як помилка калькулятора. Беремо перший інший
+         рядок, і лише коли іншого немає — доводиться в лот. */
+      if (hid) {
+        var at = 0;
+        while (at < vis.length && vis[at].k === 'lot') at++;
+        if (at >= vis.length) at = 0;
+        vis[at].v += hid;
+        /* Якщо іншого рядка не лишилось і гроші все ж лягли на лот —
+           підпис «Ціна лоту» вже неправда. Називаємо чесно. */
+        if (vis[at].k === 'lot') { vis[at].n = 'Вартість під ключ'; vis[at].note = ''; }
+      }
+      groups.push({ t: g.t, rows: vis });
+    } else {
+      carry += hid;
+    }
+  }
+
+  if (!groups.length) return;              // сховано геть усе — лишаємо як було
+  if (carry) {
+    var g0 = groups[0], at0 = 0;
+    while (at0 < g0.rows.length && g0.rows[at0].k === 'lot') at0++;
+    if (at0 >= g0.rows.length) at0 = 0;
+    g0.rows[at0].v += carry;
+    if (g0.rows[at0].k === 'lot') { g0.rows[at0].n = 'Вартість під ключ'; g0.rows[at0].note = ''; }
+  }
+  r.groups = groups;
 }
 
 /* Скільки коштує довезти з майданчика до порту. Для Канади ціна
@@ -333,15 +388,81 @@ function drawCarFound() {
   if (c.odo) bits.push(thou(c.odo) + ' миль');
   if (c.damage) bits.push(c.damage);
   if (c.branch) bits.push(c.branch.toUpperCase());
+
+  var ph = c.photos || [];
+  var first = ph.length ? ph[0].t : (c.photo || '');
+
   box.innerHTML =
     '<div class="car">' +
-      (c.photo ? '<img src="' + esc(c.photo) + '" alt="" loading="lazy">' : '') +
+      (first ? '<img src="' + esc(first) + '" alt="" referrerpolicy="no-referrer">' : '') +
       '<div><b>' + esc(c.title || 'Авто') + '</b>' +
       '<small><span class="lotno">' + esc(c.lotNo || '') + '</span>' +
         (bits.length ? ' · ' + esc(bits.join(' · ')) : '') + '</small>' +
       (c.vin ? '<small>' + esc(c.vin) + '</small>' : '') +
       '</div>' +
-    '</div>';
+    '</div>' +
+    (ph.length > 1
+      ? '<div class="shots">' + ph.map(function (x, i) {
+          /* Без відкладеного завантаження: дванадцять мініатюр важать 48 КБ,
+             а «lazy» додає лише спосіб не завантажитись зовсім. */
+          return '<img src="' + esc(x.t) + '" alt="" referrerpolicy="no-referrer" data-i="' + i + '">';
+        }).join('') + '</div>'
+      : '');
+
+  [].forEach.call(box.querySelectorAll('.shots img'), function (im) {
+    im.addEventListener('click', function () { openShot(+im.dataset.i); });
+  });
+  if (first) {
+    var big = box.querySelector('.car img');
+    if (big && ph.length) big.addEventListener('click', function () { openShot(0); });
+  }
+}
+
+/* Перегляд на весь екран. Велике фото тягнемо лише тут — у смужці
+   мініатюри по 4 КБ, і дванадцять із них важать менше за одне велике. */
+var SHOT = 0;
+
+function openShot(i) {
+  var ph = (S.car && S.car.photos) || [];
+  if (!ph.length) return;
+  SHOT = Math.max(0, Math.min(i, ph.length - 1));
+
+  var v = $('#viewer');
+  v.className = 'viewer';
+  v.innerHTML =
+    '<button type="button" class="cl" id="vClose" aria-label="Закрити">×</button>' +
+    '<button type="button" class="nav pv" id="vPrev" aria-label="Назад">‹</button>' +
+    '<img id="vImg" src="' + esc(ph[SHOT].f) + '" alt="" referrerpolicy="no-referrer">' +
+    '<button type="button" class="nav nx" id="vNext" aria-label="Далі">›</button>' +
+    '<div class="cnt" id="vCnt">' + (SHOT + 1) + ' / ' + ph.length + '</div>';
+
+  $('#vClose').addEventListener('click', closeShot);
+  $('#vPrev').addEventListener('click', function () { stepShot(-1); });
+  $('#vNext').addEventListener('click', function () { stepShot(1); });
+  v.addEventListener('click', function (e) { if (e.target === v) closeShot(); });
+  document.addEventListener('keydown', shotKey);
+  document.body.style.overflow = 'hidden';
+}
+
+function stepShot(d) {
+  var ph = (S.car && S.car.photos) || [];
+  if (!ph.length) return;
+  SHOT = (SHOT + d + ph.length) % ph.length;
+  $('#vImg').src = ph[SHOT].f;
+  $('#vCnt').textContent = (SHOT + 1) + ' / ' + ph.length;
+}
+
+function closeShot() {
+  var v = $('#viewer');
+  v.className = ''; v.innerHTML = '';
+  document.removeEventListener('keydown', shotKey);
+  document.body.style.overflow = '';
+}
+
+function shotKey(e) {
+  if (e.key === 'Escape') closeShot();
+  else if (e.key === 'ArrowLeft') stepShot(-1);
+  else if (e.key === 'ArrowRight') stepShot(1);
 }
 
 function seekLot() {
@@ -478,25 +599,59 @@ function drawCar() {
 
 /* Контакти показуємо тільки якщо власник їх вписав: порожній блок з
    написом «звʼязок» гірший, ніж його відсутність. */
+/* Український номер показуємо як його читають уголос: +38 067 123 45 67.
+   Голий рядок цифр виглядає як помилка, а не як телефон. */
+function phoneText(raw) {
+  var d = String(raw || '').replace(/\D/g, '');
+  if (d.length === 10 && d[0] === '0') d = '38' + d;          // 067…
+  if (d.length === 11 && d.slice(0, 2) === '80') d = '3' + d; // 8067…
+  if (d.length === 12 && d.slice(0, 2) === '38')
+    return '+38 ' + d.slice(2, 5) + ' ' + d.slice(5, 8) + ' ' + d.slice(8, 10) + ' ' + d.slice(10);
+  return String(raw || '').trim();
+}
+function phoneHref(raw) {
+  var d = String(raw || '').replace(/\D/g, '');
+  if (d.length === 10 && d[0] === '0') d = '38' + d;
+  return '+' + d;
+}
+
+var ICON = {
+  phone: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6.6 3.2 8 6.1 6.5 7.6a10 10 0 0 0 5.9 5.9L14 12l2.9 1.4c.6.3.9 1 .7 1.6l-.5 1.6a1.5 1.5 0 0 1-1.7 1A15.5 15.5 0 0 1 2.4 4.6a1.5 1.5 0 0 1 1-1.7l1.6-.5c.6-.2 1.3.1 1.6.7Z"/></svg>',
+  tg:    '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M17.6 3.3 2.4 9.1c-.7.3-.7 1.2 0 1.4l3.8 1.2 1.4 4.3c.2.6 1 .8 1.4.3l2-2.1 3.9 2.9c.5.4 1.2.1 1.3-.5l2.4-12c.2-.7-.5-1.3-1-1.3ZM7.9 11.6l7-4.4-5.6 5.2-.3 2.5-1.1-3.3Z"/></svg>',
+  site:  '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17Zm5.9 7.6h-2.5a13 13 0 0 0-1-4.3 6.9 6.9 0 0 1 3.5 4.3ZM10 3.2c.6.9 1.3 2.7 1.5 5.9h-3c.2-3.2.9-5 1.5-5.9ZM4.1 9.1a6.9 6.9 0 0 1 3.5-4.3 13 13 0 0 0-1 4.3H4.1Zm0 1.8h2.5c.1 1.7.4 3.1 1 4.3a6.9 6.9 0 0 1-3.5-4.3Zm5.9 5.9c-.6-.9-1.3-2.7-1.5-5.9h3c-.2 3.2-.9 5-1.5 5.9Zm2.4-1.6c.5-1.2.9-2.6 1-4.3h2.5a6.9 6.9 0 0 1-3.5 4.3Z"/></svg>',
+};
+
+/* Кнопка з написом «що це» і «куди веде»: людина має розуміти, що
+   станеться після натискання, ще до натискання. */
+function talkBtn(kind, title, sub, href, blank) {
+  return '<a class="tb" href="' + esc(href) + '"' +
+    (blank ? ' target="_blank" rel="noopener"' : '') + '>' +
+    '<span class="ic">' + ICON[kind] + '</span>' +
+    '<span class="tx"><b>' + esc(title) + '</b><i>' + esc(sub) + '</i></span>' +
+    '</a>';
+}
+
 function drawContacts() {
   var c = CFG.contacts || {};
   var box = $('#contacts');
   if (!box) return;
+
   var out = [];
-  if (c.phone) out.push('<a href="tel:' + esc(c.phone.replace(/[^\d+]/g, '')) + '">' +
-    esc(c.phone) + '</a>');
+  if (c.phone)
+    out.push(talkBtn('phone', 'Зателефонувати', phoneText(c.phone), 'tel:' + phoneHref(c.phone)));
   if (c.tg) {
     var u = c.tg.replace(/^@/, '').replace(/^https?:\/\/t\.me\//, '');
-    out.push('<a href="https://t.me/' + esc(u) + '" target="_blank" rel="noopener">@' + esc(u) + '</a>');
+    out.push(talkBtn('tg', 'Написати в Telegram', '@' + u, 'https://t.me/' + u, true));
   }
   if (c.site) {
-    var w = c.site.replace(/^https?:\/\//, '');
-    out.push('<a href="https://' + esc(w) + '" target="_blank" rel="noopener">' + esc(w) + '</a>');
+    var w = c.site.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    out.push(talkBtn('site', 'Сайт', w, 'https://' + w, true));
   }
+
   if (!out.length && !c.note) { box.innerHTML = ''; box.className = ''; return; }
   box.className = 'card glass talk';
   box.innerHTML =
-    '<h2>Звʼязатися<u></u></h2>' +
+    '<h2>Маєте питання<u></u></h2>' +
     (out.length ? '<div class="links">' + out.join('') + '</div>' : '') +
     (c.note ? '<div class="hint">' + esc(c.note) + '</div>' : '');
 }
@@ -513,14 +668,21 @@ function drawSum() {
     hero.innerHTML = '<div class="lb">Ще не рахується</div>' +
       '<div class="need">Вкажіть<b>' + esc(r.need.join(', ')) + '</b></div>';
     card.style.display = 'none';
+    $('#bar').className = 'bar';         // поки нема суми — смужки теж нема
     return;
   }
+
+  var uah = Math.round(r.total * CFG.usd).toLocaleString('uk-UA').replace(/ /g, '\u00A0');
 
   hero.className = 'hero';
   hero.innerHTML = '<div class="lb">Разом під ключ</div>' +
     '<div class="big">' + money(r.total) + '<em>USD</em></div>' +
-    '<div class="uah">' + Math.round(r.total * CFG.usd).toLocaleString('uk-UA').replace(/ /g, '\u00A0') +
-    ' ₴ за курсом ' + CFG.usd + '</div>';
+    '<div class="uah">' + uah + ' ₴ за курсом ' + CFG.usd + '</div>';
+
+  $('#bar').innerHTML =
+    '<div><div class="lb">Разом під ключ</div>' +
+    '<div class="vv">' + money(r.total) + '</div></div>' +
+    '<div class="uah">' + uah + ' ₴</div>';
 
   var h = '';
   r.groups.forEach(function (g) {
@@ -563,6 +725,38 @@ function start() {
   });
   $('#fuel').addEventListener('change', function () { S.fuel = this.value; draw(); });
   $('#body').addEventListener('change', function () { S.body = this.value; drawSum(); });
+
+  /* Смужка з підсумком зʼявляється, коли велика плашка пішла за екран.
+     Так сума завжди під рукою, але не займає третину телефона, поки
+     людина заповнює поля. */
+  var hero = $('#hero');
+  var onScroll = function () {
+    var gone = hero.getBoundingClientRect().bottom < 4;
+    var bar = $('#bar');
+    var want = (gone && bar.innerHTML) ? 'bar on' : 'bar';
+    if (bar.className !== want) bar.className = want;
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  $('#bar').addEventListener('click', function () {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  onScroll();
+
+  /* Клавіатура на телефоні не має свого «готово» для числових полів —
+     тому ховаємо її дотиком будь-де поза полем. Без цього вона стоїть і
+     закриває половину екрана, де саме й зʼявляється відповідь. */
+  document.addEventListener('touchstart', function (e) {
+    var a = document.activeElement;
+    if (!a || (a.tagName !== 'INPUT' && a.tagName !== 'SELECT')) return;
+    if (e.target === a || (e.target.closest && e.target.closest('.seek'))) return;
+    a.blur();
+  }, { passive: true });
+  document.addEventListener('mousedown', function (e) {
+    var a = document.activeElement;
+    if (a && a.tagName === 'INPUT' && e.target !== a &&
+        !(e.target.closest && e.target.closest('.found, .seek'))) a.blur();
+  });
 
   draw();
 }

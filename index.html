@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=20260831-0110">
+<link rel="stylesheet" href="styles.css?v=20260831-0420">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -20,6 +20,8 @@
     <img class="logo" src="logo.png?v=1" alt="АРТ АВТО">
     <small>калькулятор</small>
   </div>
+
+  <div class="bar" id="bar"></div>
 
   <div class="hero" id="hero"></div>
 
@@ -122,8 +124,10 @@
 
 <!-- Адреса сервера. Якщо він недоступний — калькулятор працює на
      вбудованих даних нижче, просто без свіжих ставок. -->
+<div id="viewer"></div>
+
 <script>window.ART_API = "https://art-avto.tovartauto.workers.dev";</script>
-<script src="data.js?v=20260831-0110"></script>
-<script src="app.js?v=20260831-0110"></script>
+<script src="data.js?v=20260831-0420"></script>
+<script src="app.js?v=20260831-0420"></script>
 </body>
 </html>

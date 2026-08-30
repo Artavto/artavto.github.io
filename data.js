@@ -39,6 +39,7 @@ window.ART = {
   "customsShip": 1600,
   "dutyPct": 10,
   "vatPct": 20,
+  "useNbu": false,
   "eur": 48.5,
   "usd": 44.6,
   "exPetrol": {
@@ -213,6 +214,7 @@ window.ART = {
     "phone": "",
     "site": "",
     "note": ""
-  }
+  },
+  "hide": {}
 }
 };

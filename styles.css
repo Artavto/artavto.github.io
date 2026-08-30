@@ -93,8 +93,11 @@ body::before{
 }
 
 /* ── головна плашка ── */
+/* Плашка НЕ закріплена. Вона гарна, але займає третину телефона, і
+   поки людина заповнює поля нижче, дивитись їй треба туди, а не сюди.
+   Коли плашка йде вгору за екран, замість неї зʼявляється вузька смужка
+   з тією самою сумою — див. .bar нижче. */
 .hero{
-  position:sticky;top:10px;z-index:5;
   border-radius:var(--r);padding:20px 20px 18px;margin-bottom:14px;
   color:#fff;overflow:hidden;
   background:linear-gradient(128deg, var(--blue-lit) 0%, var(--blue) 45%, var(--blue-deep) 100%);
@@ -123,6 +126,30 @@ body::before{
   background:linear-gradient(128deg,#6B737E 0%,#454C56 50%,#2A2F36 100%);
   box-shadow:var(--sh);
 }
+
+/* ── вузька смужка з підсумком ── */
+.bar{display:none}
+.bar.on{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  position:fixed;left:0;right:0;top:0;z-index:9;
+  padding:11px 16px calc(11px + env(safe-area-inset-top, 0px));
+  padding-top:calc(11px + env(safe-area-inset-top, 0px));
+  color:#fff;cursor:pointer;overflow:hidden;
+  background:linear-gradient(128deg, var(--blue-lit) 0%, var(--blue) 45%, var(--blue-deep) 100%);
+  box-shadow:0 6px 22px -12px rgba(24,88,152,.95);
+}
+.bar::before{
+  content:"";position:absolute;top:-40%;bottom:-40%;left:44%;width:52%;
+  background:linear-gradient(90deg, rgba(255,255,255,.14), rgba(255,255,255,0));
+  transform:skewX(var(--skew));pointer-events:none;
+}
+.bar > *{position:relative}
+.bar .lb{font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;opacity:.7}
+.bar .vv{
+  font-family:"Onest",system-ui,sans-serif;font-variant-numeric:tabular-nums;
+  font-size:19px;font-weight:600;letter-spacing:-.02em;white-space:nowrap;
+}
+.bar .uah{font-size:11.5px;opacity:.72;white-space:nowrap}
 
 /* ── картки ── */
 .card{padding:18px;margin-bottom:14px}
@@ -314,20 +341,78 @@ select{
   display:flex;align-items:center;gap:11px;
 }
 .talk h2 u{flex:1;height:1px;background:var(--field-line);text-decoration:none}
-.talk .links{display:flex;flex-wrap:wrap;gap:9px}
-.talk .links a{
-  flex:1 1 auto;min-width:44%;text-align:center;position:relative;overflow:hidden;
-  background:linear-gradient(128deg, var(--blue-lit), var(--blue));
-  color:#fff;text-decoration:none;border-radius:var(--r-in);
-  padding:13px 14px;font-size:14px;font-weight:600;
-  box-shadow:0 6px 16px -9px rgba(24,88,152,.95);
-}
-.talk .links a::before{
-  content:"";position:absolute;top:-40%;bottom:-40%;left:56%;width:40%;
-  background:linear-gradient(90deg, rgba(255,255,255,.17), rgba(255,255,255,0));
-  transform:skewX(var(--skew));pointer-events:none;
-}
+.talk .links{display:flex;flex-direction:column;gap:9px}
 .talk .hint{margin-top:12px}
+
+/* Кнопка звʼязку. Спокійна, з підписом: людина бачить, що станеться
+   після натискання. Суцільна синя плашка з голими цифрами читається як
+   помилка, а не як телефон — тому тут світле тло й окремий значок. */
+.tb{
+  display:flex;align-items:center;gap:13px;text-decoration:none;
+  background:var(--field);border:1px solid var(--field-line);
+  border-radius:var(--r-in);padding:12px 14px;color:var(--text);
+  transition:border-color .13s, box-shadow .13s;
+}
+.tb:hover{border-color:var(--blue);box-shadow:0 0 0 3px rgba(24,88,152,.10)}
+.tb .ic{
+  flex:0 0 auto;width:38px;height:38px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(128deg, var(--blue-lit), var(--blue));
+  box-shadow:0 5px 13px -7px rgba(24,88,152,.95);
+}
+.tb .ic svg{width:19px;height:19px;fill:#fff;display:block}
+.tb .tx{min-width:0;flex:1}
+.tb .tx b{display:block;font-size:14px;font-weight:600;line-height:1.3}
+.tb .tx i{
+  display:block;font-style:normal;color:var(--mut);font-size:13px;margin-top:2px;
+  font-family:"Onest",system-ui,sans-serif;font-variant-numeric:tabular-nums;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
 
 /* коли збір рахується сам — поле ставки лишається саме, на всю ширину */
 .fld.half{grid-column:1 / -1}
+
+/* ── фотографії лота ── */
+.car img{cursor:pointer}
+
+.shots{
+  display:flex;gap:7px;overflow-x:auto;margin-top:9px;padding-bottom:3px;
+  -webkit-overflow-scrolling:touch;scrollbar-width:thin;
+}
+.shots img{
+  width:74px;height:56px;flex:0 0 auto;object-fit:cover;cursor:pointer;
+  border-radius:7px;background:var(--bg-base);
+  border:1px solid var(--field-line);
+}
+.shots img:hover{border-color:var(--blue)}
+
+/* Перегляд на весь екран. Тло глухе, а не напівпрозоре: на фото з
+   аукціону багато світлих ділянок, і крізь скло вони зливаються. */
+#viewer{display:none}
+#viewer.viewer{
+  display:flex;align-items:center;justify-content:center;
+  position:fixed;inset:0;z-index:50;background:#0E1013;
+  padding:52px 12px 64px;
+}
+#viewer img{
+  max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;
+  background:#111;
+}
+#viewer .cl{
+  position:absolute;top:12px;right:12px;width:40px;height:40px;
+  border:0;border-radius:10px;cursor:pointer;
+  background:rgba(255,255,255,.14);color:#fff;font-size:24px;line-height:1;
+}
+#viewer .nav{
+  position:absolute;top:50%;transform:translateY(-50%);
+  width:42px;height:64px;border:0;border-radius:10px;cursor:pointer;
+  background:rgba(255,255,255,.12);color:#fff;font-size:30px;line-height:1;
+}
+#viewer .pv{left:10px}
+#viewer .nx{right:10px}
+#viewer .cl:hover,#viewer .nav:hover{background:rgba(255,255,255,.24)}
+#viewer .cnt{
+  position:absolute;bottom:20px;left:0;right:0;text-align:center;
+  color:rgba(255,255,255,.75);font-size:12.5px;font-weight:600;
+  letter-spacing:.1em;font-family:"Onest",system-ui,sans-serif;
+}
