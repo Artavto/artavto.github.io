@@ -392,9 +392,21 @@ function drawCarFound() {
   var ph = c.photos || [];
   var first = ph.length ? ph[0].t : (c.photo || '');
 
+  /* Скільки днів запису. У старих лотів джерело вже прибрало фото, а
+     пробіг і пошкодження лишились торішні — і саме про це треба сказати:
+     порахувати суму по торішніх даних людина може, а знати, що вони
+     торішні, — ні. */
+  var old = 0;
+  if (c.upd && /^\d{4}-\d{2}-\d{2}$/.test(c.upd)) {
+    var tms = Date.parse(c.upd + 'T12:00:00');
+    if (isFinite(tms)) old = Math.floor((Date.now() - tms) / 86400000);
+  }
+
   box.innerHTML =
     '<div class="car">' +
-      (first ? '<img src="' + esc(first) + '" alt="" referrerpolicy="no-referrer">' : '') +
+      (first
+        ? '<img src="' + esc(first) + '" alt="" referrerpolicy="no-referrer">'
+        : '<span class="nopic">' + picIcon() + '</span>') +
       '<div><b>' + esc(c.title || 'Авто') + '</b>' +
       '<small><span class="lotno">' + esc(c.lotNo || '') + '</span>' +
         (bits.length ? ' · ' + esc(bits.join(' · ')) : '') + '</small>' +
@@ -407,7 +419,14 @@ function drawCarFound() {
              а «lazy» додає лише спосіб не завантажитись зовсім. */
           return '<img src="' + esc(x.t) + '" alt="" referrerpolicy="no-referrer" data-i="' + i + '">';
         }).join('') + '</div>'
-      : '');
+      : '') +
+    (old > 60
+      ? '<div class="stale">Дані про лот від ' + esc(dateTxt(c.upd)) + ' — це ' +
+        esc(monthsTxt(old)) + ' тому. Фото за цей час прибрали, а пробіг і ' +
+        'пошкодження могли змінитись. Стан авто звіряйте на аукціоні.</div>'
+      : (!ph.length
+          ? '<div class="stale">Фотографій до цього лота джерело не дає.</div>'
+          : ''));
 
   [].forEach.call(box.querySelectorAll('.shots img'), function (im) {
     im.addEventListener('click', function () { openShot(+im.dataset.i); });
@@ -463,6 +482,33 @@ function shotKey(e) {
   if (e.key === 'Escape') closeShot();
   else if (e.key === 'ArrowLeft') stepShot(-1);
   else if (e.key === 'ArrowRight') stepShot(1);
+}
+
+/* 2025-08-21 → 21.08.2025 */
+function dateTxt(iso) {
+  var p = String(iso || '').split('-');
+  return p.length === 3 ? p[2] + '.' + p[1] + '.' + p[0] : String(iso || '');
+}
+
+/* «майже рік», «8 місяців» — людською мовою й з правильним закінченням.
+   Сухе «427 днів» ніхто в голові не переводить. */
+function monthsTxt(days) {
+  if (days >= 700) return 'понад два роки';
+  if (days >= 330) return 'майже рік';
+  var m = Math.round(days / 30.4);
+  if (m < 2) return 'близько місяця';
+  var last = m % 10, two = m % 100;
+  var word = (last === 1 && two !== 11) ? 'місяць'
+           : (last >= 2 && last <= 4 && (two < 12 || two > 14)) ? 'місяці' : 'місяців';
+  return m + ' ' + word;
+}
+
+/* Значок замість фото. Порожнє місце в картці читається як поломка,
+   а значок — як «фото немає». Це різні речі. */
+function picIcon() {
+  return '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+    '<path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm1 2v8.6l4.2-4.2 ' +
+    '3.1 3.1 3-3L19 14V7H5Zm3.6 1.4a1.6 1.6 0 1 1 0 3.2 1.6 1.6 0 0 1 0-3.2Z"/></svg>';
 }
 
 function seekLot() {

@@ -416,3 +416,19 @@ select{
   color:rgba(255,255,255,.75);font-size:12.5px;font-weight:600;
   letter-spacing:.1em;font-family:"Onest",system-ui,sans-serif;
 }
+
+/* Значок замість фото — коли джерело його не дає. */
+.nopic{
+  width:78px;height:58px;flex:0 0 auto;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--bg-base);border:1px solid var(--field-line);
+}
+.nopic svg{width:24px;height:24px;fill:var(--mut);display:block}
+
+/* Попередження про давність запису. Помітне, але не тривожне: це не
+   помилка, це чесна вказівка на вік даних. */
+.stale{
+  margin-top:9px;padding:11px 13px;border-radius:var(--r-in);
+  background:rgba(180,120,25,.10);color:#8A5A12;
+  font-size:12.5px;line-height:1.5;
+}
