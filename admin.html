@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>АРТ АВТО — налаштування</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="styles.css?v=20260830-1800">
+<style>
+  /* Те, чого немає в калькуляторі: кнопки, повідомлення, зона для файла. */
+  .btn{
+    display:block;width:100%;font:inherit;font-weight:600;font-size:15px;
+    color:#fff;background:linear-gradient(128deg,var(--blue-lit),var(--blue));
+    border:0;border-radius:var(--r-in);padding:14px;cursor:pointer;
+    box-shadow:0 8px 18px -10px rgba(24,88,152,.9);
+  }
+  .btn.sec{
+    background:none;color:var(--blue);border:1px solid var(--field-line);box-shadow:none;
+  }
+  .btn.sec:hover{border-color:var(--blue);background:rgba(24,88,152,.05)}
+  .btn + .btn{margin-top:9px}
+  .msg{
+    border-radius:var(--r-in);padding:12px 14px;font-size:13.5px;line-height:1.5;
+    margin-top:11px;
+  }
+  .msg.ok{background:rgba(24,120,72,.10);color:#12693F}
+  .msg.er{background:rgba(180,60,25,.10);color:#9C3A12}
+  .msg.inf{background:rgba(24,88,152,.09);color:var(--blue)}
+  .msg.hide{display:none}
+  .drop{
+    border:1.5px dashed var(--field-line);border-radius:var(--r-in);
+    padding:22px 16px;text-align:center;color:var(--mut);font-size:13.5px;
+    cursor:pointer;background:var(--field);line-height:1.5;
+  }
+  .drop:hover,.drop.over{border-color:var(--blue);background:rgba(24,88,152,.05);color:var(--blue)}
+  .drop b{display:block;color:var(--text);font-size:14.5px;margin-bottom:4px}
+  .gate{max-width:380px;margin:14vh auto 0}
+  .exp{font-size:11.5px;color:var(--mut);margin-top:6px;line-height:1.45}
+  .grid5{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .savedAt{font-size:11.5px;color:var(--mut);text-align:center;margin-top:14px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="top">
+    <img class="logo" src="logo.png?v=1" alt="АРТ АВТО">
+    <small>налаштування</small>
+  </div>
+
+  <!-- ── вхід ── -->
+  <div id="gate" class="gate">
+    <div class="card glass">
+      <h2><span class="step"><span>·</span></span>Вхід<u></u></h2>
+      <div class="fld">
+        <label for="pass">Пароль</label>
+        <input id="pass" type="password" autocomplete="current-password">
+      </div>
+      <button class="btn" id="go">Увійти</button>
+      <div class="msg er hide" id="gateErr"></div>
+    </div>
+  </div>
+
+  <!-- ── сама панель ── -->
+  <div id="panel" style="display:none">
+
+    <div class="card glass">
+      <h2><span class="step"><span>1</span></span>Море до Клайпеди<u></u></h2>
+      <div class="exp" style="margin:0 0 14px">Скільки коштує морська доставка від
+        кожного порту США. Наземна доставка до порту береться з таблиці партнерів — вона нижче.</div>
+      <div class="grid5" id="seaBox"></div>
+    </div>
+
+    <div class="card glass">
+      <h2><span class="step"><span>2</span></span>Надбавки<u></u></h2>
+      <div id="feeBox"></div>
+    </div>
+
+    <div class="card glass">
+      <h2><span class="step"><span>3</span></span>Європа й комісія<u></u></h2>
+      <div id="euBox"></div>
+    </div>
+
+    <div class="card glass">
+      <h2><span class="step"><span>4</span></span>Митниця<u></u></h2>
+      <div id="cuBox"></div>
+    </div>
+
+    <div class="card glass">
+      <h2><span class="step"><span>5</span></span>Курси валют<u></u></h2>
+      <div class="grid5" id="fxBox"></div>
+      <div class="exp">Потрібні, щоб перевести акциз із євро й показати підсумок
+        у гривні. Оновлюйте раз на тиждень або коли курс помітно зрушив.</div>
+    </div>
+
+    <div class="card glass">
+      <h2><span class="step"><span>6</span></span>Таблиця доставки<u></u></h2>
+      <div class="exp" style="margin:0 0 12px">Файл Excel від партнерів у США —
+        ціни від майданчиків до портів. Оновлюється раз на рік: просто перетягніть
+        сюди новий файл.</div>
+      <div class="drop" id="drop">
+        <b>Перетягніть файл сюди</b>
+        або натисніть, щоб обрати
+      </div>
+      <input type="file" id="file" accept=".xlsx" style="display:none">
+      <div class="msg inf hide" id="tabNow"></div>
+      <div class="msg hide" id="tabMsg"></div>
+    </div>
+
+    <div class="card glass">
+      <button class="btn" id="save">Зберегти</button>
+      <button class="btn sec" id="undo">Повернути як було</button>
+      <div class="msg hide" id="saveMsg"></div>
+      <div class="savedAt" id="savedAt"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+/* =====================================================================
+   Налаштування АРТ АВТО
+   ---------------------------------------------------------------------
+   Сторінка розрахована на замовника, не на розробника. Тому кожне поле
+   підписане тим, що воно означає в житті, а не назвою змінної. Людина
+   має розуміти, що саме міняє, без дзвінка комусь.
+   ===================================================================== */
+'use strict';
+
+var API = 'https://art-avto.tovartauto.workers.dev';
+var $ = function (s) { return document.querySelector(s); };
+var KEY = '', CFG = null, LOC = null;
+
+function show(id, text, kind) {
+  var e = $('#' + id);
+  e.textContent = text || '';
+  e.className = 'msg ' + (kind || 'inf') + (text ? '' : ' hide');
+}
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function api(path, body) {
+  return fetch(API.replace(/\/+$/, '') + path, {
+    method: body ? 'POST' : 'GET',
+    headers: { 'Content-Type': 'application/json', 'X-Key': KEY },
+    body: body ? JSON.stringify(body) : undefined,
+  }).then(function (r) { return r.json(); });
+}
+
+/* ── які поля показувати й як їх назвати людською мовою ── */
+var FEES = [
+  ['partnerFee', 'Комісія партнера в США', 'Додається до кожного авто.'],
+  ['closedFee',  'Закритий штат', 'Доплата за штати, де потрібен дилерський доступ.'],
+  ['closedList', 'Які штати закриті', 'Двобуквені коди через кому: AL, WI.'],
+  ['utilMI',     'Утилізація в Мічигані', 'Окрема доплата саме для цього штату.'],
+  ['evFee',      'Електро / гібрид у США', 'Доплата за відправку такого авто.'],
+  ['hazFee',     'Небезпечний вантаж на морі', 'За батарею. Якщо це те саме, що доплата вище, — поставте 0.'],
+  ['suvSea',     'Великий кузов на морі', 'Позашляховики й пікапи.'],
+];
+var EU = [
+  ['broker',     'Брокер у Клайпеді', ''],
+  ['kovel',      'Доставка до Ковеля', ''],
+  ['commission', 'Ваша комісія', 'Те, що заробляєте ви.'],
+];
+var CU = [
+  ['customsShip', 'Доставка для митниці', 'Митниця рахує не фактичну доставку, а цю фіксовану суму.'],
+  ['dutyPct',     'Ввізне мито, %', 'Для електромобілів не застосовується.'],
+  ['vatPct',      'ПДВ, %', ''],
+  ['pSmall',      'Акциз, бензин до 3000 см³', 'Євро за літр обʼєму на рік віку.'],
+  ['pBig',        'Акциз, бензин понад 3000 см³', ''],
+  ['dSmall',      'Акциз, дизель до 3500 см³', ''],
+  ['dBig',        'Акциз, дизель понад 3500 см³', ''],
+  ['evPerKwh',    'Акциз для електро', 'Євро за кВт·год батареї.'],
+];
+var FX = [['usd', 'Долар до гривні'], ['eur', 'Євро до гривні']];
+
+function fld(id, label, val, exp) {
+  return '<div class="fld"><label for="f_' + id + '">' + esc(label) + '</label>' +
+    '<input id="f_' + id + '" type="text" inputmode="decimal" value="' + esc(val) + '">' +
+    (exp ? '<div class="exp">' + esc(exp) + '</div>' : '') + '</div>';
+}
+
+function drawAll() {
+  $('#seaBox').innerHTML = ['NJ', 'GA', 'FL', 'TX', 'CA'].map(function (p) {
+    return fld('sea_' + p, CFG.portName[p] || p, CFG.sea[p]);
+  }).join('');
+
+  $('#feeBox').innerHTML = FEES.map(function (f) {
+    var v = f[0] === 'closedFee' ? CFG.closedStates.fee
+          : f[0] === 'closedList' ? (CFG.closedStates.states || []).join(', ')
+          : CFG[f[0]];
+    return fld(f[0], f[1], v, f[2]);
+  }).join('');
+
+  $('#euBox').innerHTML = EU.map(function (f) { return fld(f[0], f[1], CFG[f[0]], f[2]); }).join('');
+
+  $('#cuBox').innerHTML = CU.map(function (f) {
+    var v = f[0] === 'pSmall' ? CFG.exPetrol.small : f[0] === 'pBig' ? CFG.exPetrol.big
+          : f[0] === 'dSmall' ? CFG.exDiesel.small : f[0] === 'dBig' ? CFG.exDiesel.big
+          : CFG[f[0]];
+    return fld(f[0], f[1], v, f[2]);
+  }).join('');
+
+  $('#fxBox').innerHTML = FX.map(function (f) { return fld(f[0], f[1], CFG[f[0]]); }).join('');
+
+  var n = LOC ? ['copart', 'iaai', 'manheim', 'canada']
+    .reduce(function (s, k) { return s + ((LOC[k] || []).length); }, 0) : 0;
+  show('tabNow', n ? ('Зараз у таблиці ' + n + ' майданчиків.')
+                   : 'Таблиця ще не завантажена — калькулятор працює на вбудованій копії.', 'inf');
+}
+
+function val(id) { var e = $('#f_' + id); return e ? e.value.trim() : ''; }
+
+function collect() {
+  var b = {
+    sea: {}, closedStates: { states: val('closedList'), fee: val('closedFee') },
+    exPetrol: { small: val('pSmall'), big: val('pBig'), border: CFG.exPetrol.border },
+    exDiesel: { small: val('dSmall'), big: val('dBig'), border: CFG.exDiesel.border },
+  };
+  ['NJ', 'GA', 'FL', 'TX', 'CA'].forEach(function (p) { b.sea[p] = val('sea_' + p); });
+  ['partnerFee', 'utilMI', 'evFee', 'hazFee', 'suvSea'].forEach(function (k) { b[k] = val(k); });
+  EU.forEach(function (f) { b[f[0]] = val(f[0]); });
+  ['customsShip', 'dutyPct', 'vatPct', 'evPerKwh'].forEach(function (k) { b[k] = val(k); });
+  FX.forEach(function (f) { b[f[0]] = val(f[0]); });
+  return b;
+}
+
+/* ------------------------------------------------------------------ */
+/* РОЗБІР ФАЙЛА EXCEL ПРЯМО В БРАУЗЕРІ                                 */
+/* ------------------------------------------------------------------ */
+/* Файл .xlsx — це звичайний архів із кількома XML усередині. Браузер
+   уміє і розпаковувати (DecompressionStream), і читати XML (DOMParser),
+   тож жодних сторонніх бібліотек не треба.
+
+   Робиться це саме тут, а не на сервері: так замовник просто перетягує
+   файл, а сервер отримує вже готовий перелік і лише перевіряє його. */
+
+function u16(d, o) { return d.getUint16(o, true); }
+function u32(d, o) { return d.getUint32(o, true); }
+
+async function unzip(buf) {
+  var b = new Uint8Array(buf), d = new DataView(buf), files = {};
+  /* Опис архіву лежить у самому кінці — шукаємо його з хвоста. */
+  var eocd = -1;
+  for (var i = b.length - 22; i >= 0 && i > b.length - 66000; i--) {
+    if (u32(d, i) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error('Це не схоже на файл Excel.');
+
+  var count = u16(d, eocd + 10), pos = u32(d, eocd + 16);
+  for (var k = 0; k < count; k++) {
+    if (u32(d, pos) !== 0x02014b50) break;
+    var method = u16(d, pos + 10);
+    var csize  = u32(d, pos + 20);
+    var nlen   = u16(d, pos + 28);
+    var elen   = u16(d, pos + 30);
+    var clen   = u16(d, pos + 32);
+    var lho    = u32(d, pos + 42);
+    var name   = new TextDecoder().decode(b.subarray(pos + 46, pos + 46 + nlen));
+    pos += 46 + nlen + elen + clen;
+
+    if (!/^xl\/(worksheets\/sheet\d+\.xml|sharedStrings\.xml|workbook\.xml)$/.test(name)) continue;
+
+    var ln = u16(d, lho + 26), le = u16(d, lho + 28);
+    var start = lho + 30 + ln + le;
+    var raw = b.subarray(start, start + csize);
+    files[name] = method === 0 ? raw : await inflate(raw);
+  }
+  return files;
+}
+
+async function inflate(bytes) {
+  var ds = new DecompressionStream('deflate-raw');
+  var stream = new Blob([bytes]).stream().pipeThrough(ds);
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+function xml(bytes) {
+  return new DOMParser().parseFromString(new TextDecoder().decode(bytes), 'application/xml');
+}
+
+/* Стовпці кожного аркуша. Підписи в шапці подекуди зіпсовані (у Manheim
+   два стовпці названі однаково), тому спираємось на ПОРЯДОК, а не на
+   назви — він у всіх трьох аркушах однаковий. */
+var SHEETS = {
+  copart:  { i: 1, name: 'A', city: 'B', zip: 'D', p: { NJ: 'E', GA: 'F', FL: 'G', TX: 'H', CA: 'I' } },
+  iaai:    { i: 2, name: 'B', city: 'D', zip: 'E', p: { NJ: 'F', GA: 'G', FL: 'H', TX: 'I', CA: 'J' } },
+  manheim: { i: 3, name: 'B', city: 'C', zip: 'D', p: { NJ: 'E', GA: 'F', FL: 'G', TX: 'H', CA: 'I' } },
+};
+
+function cellsOf(doc, strings) {
+  var rows = [], rs = doc.getElementsByTagName('row');
+  for (var i = 0; i < rs.length; i++) {
+    var r = rs[i], out = {}, cs = r.getElementsByTagName('c');
+    for (var j = 0; j < cs.length; j++) {
+      var c = cs[j];
+      var ref = (c.getAttribute('r') || '').replace(/\d+/g, '');
+      var v = c.getElementsByTagName('v')[0];
+      if (!v) continue;
+      var t = c.getAttribute('t'), val = v.textContent;
+      if (t === 's') val = strings[+val] || '';
+      val = String(val).trim();
+      if (val) out[ref] = val;
+    }
+    rows.push({ r: +r.getAttribute('r'), c: out });
+  }
+  return rows;
+}
+
+function money(x) {
+  var n = Number(String(x == null ? '' : x).replace(/[^\d.]/g, ''));
+  return (isFinite(n) && n > 0) ? Math.round(n) : 0;
+}
+
+async function parseXlsx(file) {
+  var files = await unzip(await file.arrayBuffer());
+  if (!files['xl/worksheets/sheet1.xml']) throw new Error('У файлі немає аркушів.');
+
+  var strings = [];
+  if (files['xl/sharedStrings.xml']) {
+    var sdoc = xml(files['xl/sharedStrings.xml']);
+    var si = sdoc.getElementsByTagName('si');
+    for (var i = 0; i < si.length; i++) {
+      var ts = si[i].getElementsByTagName('t'), s = '';
+      for (var j = 0; j < ts.length; j++) s += ts[j].textContent;
+      strings.push(s);
+    }
+  }
+
+  var loc = {};
+  for (var key in SHEETS) {
+    var sp = SHEETS[key], f = files['xl/worksheets/sheet' + sp.i + '.xml'];
+    var list = [];
+    if (f) {
+      cellsOf(xml(f), strings).forEach(function (row) {
+        if (row.r === 1) return;                       // шапка
+        var n = row.c[sp.name];
+        if (!n) return;
+        var p = {};
+        for (var port in sp.p) { var v = money(row.c[sp.p[port]]); if (v) p[port] = v; }
+        if (!Object.keys(p).length) return;
+        list.push({ n: n, c: row.c[sp.city] || '', z: row.c[sp.zip] || '', p: p });
+      });
+    }
+    loc[key] = list;
+  }
+
+  /* Канада — окремий аркуш з іншою будовою: ціна залежить від кузова. */
+  var can = [], f4 = files['xl/worksheets/sheet4.xml'];
+  if (f4) {
+    cellsOf(xml(f4), strings).forEach(function (row) {
+      if (row.r === 1 || !row.c.A) return;
+      var s = money(row.c.B), b = money(row.c.C);
+      if (s || b) can.push({ n: row.c.A, sedan: s, big: b });
+    });
+  }
+  loc.canada = can;
+  return loc;
+}
+
+async function takeFile(file) {
+  if (!file) return;
+  if (!/\.xlsx$/i.test(file.name)) {
+    show('tabMsg', 'Потрібен файл .xlsx — саме той, що надсилають партнери.', 'er');
+    return;
+  }
+  show('tabMsg', 'Читаю файл…', 'inf');
+  try {
+    var loc = await parseXlsx(file);
+    var n = ['copart', 'iaai', 'manheim', 'canada']
+      .reduce(function (s, k) { return s + loc[k].length; }, 0);
+    show('tabMsg', 'Прочитано ' + n + ' майданчиків. Зберігаю…', 'inf');
+    var d = await api('/admin/table', { loc: loc });
+    if (!d.ok) { show('tabMsg', d.error || 'Не вдалося зберегти.', 'er'); return; }
+    LOC = loc;
+    show('tabMsg', 'Готово. Copart ' + d.by.copart + ' · IAAI ' + d.by.iaai +
+      ' · Manheim ' + d.by.manheim + ' · Канада ' + d.by.canada, 'ok');
+    drawAll();
+  } catch (e) {
+    show('tabMsg', 'Не вдалося прочитати файл: ' + (e && e.message ? e.message : e), 'er');
+  }
+}
+
+/* ------------------------------------------------------------------ */
+function enter() {
+  KEY = $('#pass').value;
+  if (!KEY) return;
+  $('#go').disabled = true;
+  api('/admin/all').then(function (d) {
+    $('#go').disabled = false;
+    if (!d.ok) { show('gateErr', d.error || 'Не вдалося увійти', 'er'); return; }
+    try { sessionStorage.setItem('artKey', KEY); } catch (e) {}
+    CFG = d.cfg; LOC = d.loc;
+    $('#gate').style.display = 'none';
+    $('#panel').style.display = '';
+    drawAll();
+    stamp(d.savedAt);
+  }).catch(function () {
+    $('#go').disabled = false;
+    show('gateErr', 'Сервер не відповідає', 'er');
+  });
+}
+function stamp(s) {
+  $('#savedAt').textContent = s && s.at
+    ? 'Востаннє змінювали: ' + new Date(s.at).toLocaleString('uk-UA') + ' — ' + (s.how || '')
+    : '';
+}
+
+$('#go').addEventListener('click', enter);
+$('#pass').addEventListener('keydown', function (e) { if (e.key === 'Enter') enter(); });
+
+$('#save').addEventListener('click', function () {
+  show('saveMsg', 'Зберігаю…', 'inf');
+  api('/admin/save', collect()).then(function (d) {
+    if (!d.ok) { show('saveMsg', d.error || 'Не вдалося', 'er'); return; }
+    CFG = d.cfg; drawAll();
+    show('saveMsg', 'Збережено. Калькулятор підхопить нові ставки протягом хвилини.', 'ok');
+  }).catch(function () { show('saveMsg', 'Сервер не відповідає', 'er'); });
+});
+
+$('#undo').addEventListener('click', function () {
+  if (!confirm('Повернути ставки, які були до останнього збереження?')) return;
+  api('/admin/undo', {}).then(function (d) {
+    if (!d.ok) { show('saveMsg', d.error || 'Не вдалося', 'er'); return; }
+    CFG = d.cfg; drawAll();
+    show('saveMsg', 'Повернуто як було.', 'ok');
+  });
+});
+
+$('#drop').addEventListener('click', function () { $('#file').click(); });
+$('#file').addEventListener('change', function () { takeFile(this.files[0]); });
+['dragenter', 'dragover'].forEach(function (ev) {
+  $('#drop').addEventListener(ev, function (e) { e.preventDefault(); this.classList.add('over'); });
+});
+['dragleave', 'drop'].forEach(function (ev) {
+  $('#drop').addEventListener(ev, function (e) { e.preventDefault(); this.classList.remove('over'); });
+});
+$('#drop').addEventListener('drop', function (e) {
+  takeFile(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
+});
+
+/* Пароль тримаємо тільки до закриття вкладки. */
+try {
+  var k = sessionStorage.getItem('artKey');
+  if (k) { $('#pass').value = k; enter(); }
+} catch (e) {}
+</script>
+</body>
+</html>
