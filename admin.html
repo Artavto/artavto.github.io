@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=20260830-1800">
+<link rel="stylesheet" href="styles.css?v=20260831-0600">
 <style>
   /* Те, чого немає в калькуляторі: кнопки, повідомлення, зона для файла. */
   .btn{
@@ -32,17 +32,44 @@
   .msg.hide{display:none}
   .msg.pre{white-space:pre-wrap}
 
-  /* Галочка. Ціль натискання — увесь рядок, а не квадратик 16 пікселів:
-     на телефоні в нього не влучиш. */
+  /* Тумблер. Своя галочка тут не з примхи: у спільних стилях усі поля
+     йдуть з appearance:none, і рідна галочка через це не малюється
+     взагалі — квадратик є, а пташки в ньому не буває ніколи. Людина
+     тисне й не бачить різниці. Тому малюємо стан самі, великим.
+
+     Ціль натискання — увесь рядок, а не квадратик: на телефоні в нього
+     не влучиш. */
   .tick{
-    display:flex;align-items:center;gap:12px;cursor:pointer;
+    display:flex;align-items:center;gap:13px;cursor:pointer;
     background:var(--field);border:1px solid var(--field-line);
-    border-radius:var(--r-in);padding:14px;margin:0 0 12px;
+    border-radius:var(--r-in);padding:13px 14px;margin:0 0 12px;
     font-size:15px;font-weight:500;color:var(--text);
     text-transform:none;letter-spacing:0;
+    -webkit-user-select:none;user-select:none;
   }
-  .tick input{width:21px;height:21px;flex:0 0 auto;margin:0;accent-color:var(--blue);cursor:pointer}
   .tick:hover{border-color:var(--blue)}
+  .tick input{position:absolute;opacity:0;width:0;height:0;margin:0;padding:0}
+  .sw{
+    flex:0 0 auto;width:48px;height:28px;border-radius:14px;
+    background:#CDD5DF;position:relative;transition:background .16s;
+  }
+  .sw::after{
+    content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;
+    border-radius:50%;background:#fff;transition:left .16s;
+    box-shadow:0 1px 3px rgba(24,24,32,.30);
+  }
+  .tick input:checked + .sw{
+    background:linear-gradient(128deg, var(--blue-lit), var(--blue));
+  }
+  .tick input:checked + .sw::after{left:23px}
+  .tick input:focus-visible + .sw{box-shadow:0 0 0 3px rgba(24,88,152,.22)}
+  .tick .nm{flex:1;min-width:0}
+  /* Підпис праворуч від тумблера каже, що буде, а не що є. */
+  .tick .st{
+    flex:0 0 auto;font-size:10.5px;font-weight:700;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--mut);
+  }
+  .tick input:checked ~ .st{color:var(--blue)}
   .tick.sm{padding:11px 13px;margin:0 0 7px;font-size:14px}
   .grp{
     font-size:9.5px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;
@@ -53,18 +80,25 @@
 
   /* Вкладки. Панель віддано замовнику, а не розробнику: одна довга
      стрічка з двадцяти полів лякає й ховає те, що шукаєш. */
+  /* Шість вкладок у ряд на телефон не влазять: назви обрізало до
+     «ЗБО…» і «МИТ…», і зрозуміти, куди тиснеш, стало неможливо. Тому
+     смуга гортається вбік, а кожна назва лишається цілою. */
   .tabs{
     display:flex;gap:6px;margin:0 0 14px;padding:5px;
     background:var(--glass);border:1px solid var(--glass-line);
     border-radius:14px;box-shadow:var(--sh);
     position:sticky;top:8px;z-index:6;
+    overflow-x:auto;overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
   }
+  .tabs::-webkit-scrollbar{display:none}
   .tabs button{
-    flex:1;min-width:0;position:relative;overflow:hidden;
+    flex:0 0 auto;position:relative;overflow:hidden;
     background:none;border:0;border-radius:10px;cursor:pointer;
     font:inherit;font-size:11px;font-weight:700;letter-spacing:.1em;
-    text-transform:uppercase;color:var(--text2);padding:10px 4px;
-    white-space:nowrap;text-overflow:ellipsis;
+    text-transform:uppercase;color:var(--text2);padding:10px 13px;
+    white-space:nowrap;
   }
   .tabs button:hover{color:var(--blue)}
   .tabs button.on{
@@ -256,7 +290,8 @@
       <h2>Курси валют<u></u></h2>
       <label class="tick" for="useNbu">
         <input type="checkbox" id="useNbu">
-        <span>Брати офіційний курс НБУ</span>
+        <span class="sw"></span>
+        <span class="nm">Брати офіційний курс НБУ</span>
       </label>
       <div class="exp" style="margin:0 0 14px">Курс підтягується з сайту
         Національного банку й оновлюється сам. Числа нижче тоді не
@@ -587,7 +622,7 @@ var ROWS = [
   ['partnerFee', 'Комісія партнера'],
   ['closed',     'Закритий штат'],
   ['utilMI',     'Утиль (Мічиган)'],
-  ['evFee',      'Електро / гібрид у США'],
+  ['evFee',      'Електро / гібрид (США)'],
   ['—', 'Доставка до Клайпеди'],
   ['land',       'Майданчик → порт'],
   ['sea',        'Море до Клайпеди'],
@@ -615,7 +650,9 @@ function drawShow() {
       '<label class="tick sm" for="h_' + k + '">' +
         '<input type="checkbox" id="h_' + k + '" data-k="' + k + '"' +
           (HIDE[k] ? '' : ' checked') + '>' +
-        '<span>' + esc(t) + '</span>' +
+        '<span class="sw"></span>' +
+        '<span class="nm">' + esc(t) + '</span>' +
+        '<span class="st">' + (HIDE[k] ? 'сховано' : 'видно') + '</span>' +
       '</label>');
   }
   /* Свої надбавки теж можна ховати — але тільки ті, що вже вписані. */
@@ -626,7 +663,9 @@ function drawShow() {
         '<label class="tick sm" for="h_extra' + i + '">' +
           '<input type="checkbox" id="h_extra' + i + '" data-k="extra' + i + '"' +
             (HIDE['extra' + i] ? '' : ' checked') + '>' +
-          '<span>' + esc(e.n || ('надбавка ' + (i + 1))) + '</span>' +
+          '<span class="sw"></span>' +
+          '<span class="nm">' + esc(e.n || ('надбавка ' + (i + 1))) + '</span>' +
+          '<span class="st">' + (HIDE['extra' + i] ? 'сховано' : 'видно') + '</span>' +
         '</label>');
     });
   }
@@ -636,6 +675,8 @@ function drawShow() {
     c.addEventListener('change', function () {
       if (c.checked) delete HIDE[c.dataset.k];
       else HIDE[c.dataset.k] = true;
+      var st = c.parentNode.querySelector('.st');
+      if (st) st.textContent = c.checked ? 'видно' : 'сховано';
     });
   });
 }
@@ -973,6 +1014,9 @@ $('#undo').addEventListener('click', function () {
     [].forEach.call(document.querySelectorAll('.tab'), function (x) {
       x.classList.toggle('hide', x.dataset.t !== t);
     });
+    /* Обрана вкладка сама під'їжджає у видиме — інакше після натискання
+       на крайню вона лишається наполовину за краєм. */
+    try { b.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch (e) {}
     window.scrollTo(0, 0);
   });
 });
