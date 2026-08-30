@@ -114,6 +114,12 @@ body::before{
    Коли плашка йде вгору за екран, замість неї зʼявляється вузька смужка
    з тією самою сумою — див. .bar нижче. */
 .hero{
+  /* position ОБОВʼЯЗКОВИЙ. Тут була sticky, я її прибрав — і скошена
+     смуга нижче почала рахувати свої відсотки від усієї сторінки, а не
+     від плашки. Виходив шар на півтори ширини екрана, який overflow
+     не обрізає (він обрізає лише те, чиї координати всередині), і
+     сторінка їздила вбік у Telegram. */
+  position:relative;
   border-radius:var(--r);padding:20px 20px 18px;margin-bottom:14px;
   color:#fff;overflow:hidden;
   background:linear-gradient(128deg, var(--blue-lit) 0%, var(--blue) 45%, var(--blue-deep) 100%);
