@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=20260831-0600">
+<link rel="stylesheet" href="styles.css?v=20260831-0700">
 <style>
   /* Те, чого немає в калькуляторі: кнопки, повідомлення, зона для файла. */
   .btn{
@@ -184,6 +184,8 @@
 
   <!-- ── сама панель ── -->
   <div id="panel" style="display:none">
+
+    <div class="msg er hide" id="weak"></div>
 
     <div class="tabs" id="tabs">
       <button type="button" class="on" data-t="price">Ціни</button>
@@ -969,6 +971,11 @@ function enter() {
     if (!d.ok) { show('gateErr', d.error || 'Не вдалося увійти', 'er'); return; }
     try { sessionStorage.setItem('artKey', KEY); } catch (e) {}
     CFG = d.cfg; LOC = d.loc; NBU_NOW = d.nbu || null;
+    if (d.weak) {
+      show('weak', 'Пароль закороткий — менше 12 знаків. Його можна підібрати ' +
+        'за добу. Змініть у Cloudflare: воркер art-avto → Settings → Variables ' +
+        'and secrets → ADMIN_PASSWORD → Edit.', 'er');
+    }
     $('#gate').style.display = 'none';
     $('#panel').style.display = '';
     drawAll();
