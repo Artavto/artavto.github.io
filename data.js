@@ -215,7 +215,10 @@ window.ART = {
     "site": "",
     "note": ""
   },
-  "lotSrc": "off",
+  "lotSrc": "dir",
+  "lotUrl": "",
+  "keyWay": "none",
+  "keyName": "",
   "hide": {}
 }
 };

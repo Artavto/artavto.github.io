@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=20260831-1400">
+<link rel="stylesheet" href="styles.css?v=20260831-1700">
 <style>
   /* Те, чого немає в калькуляторі: кнопки, повідомлення, зона для файла. */
   .btn{
@@ -31,6 +31,10 @@
   .msg.inf{background:rgba(24,88,152,.09);color:var(--blue)}
   .msg.hide{display:none}
   .msg.pre{white-space:pre-wrap}
+  .hide{display:none}
+  .seek2{display:flex;gap:9px}
+  .seek2 input{flex:1;min-width:0}
+  .seek2 .btn{flex:0 0 auto;width:auto;padding:11px 16px}
 
   /* Тумблер. Своя галочка тут не з примхи: у спільних стилях усі поля
      йдуть з appearance:none, і рідна галочка через це не малюється
@@ -356,15 +360,53 @@
       <div class="fld">
         <label for="lotSrc">Джерело</label>
         <select id="lotSrc">
+          <option value="dir">Безкоштовний довідник лотів</option>
+          <option value="own">Свій доступ від дилера</option>
+          <option value="apiauctions">apiauctions.io — платний, потрібен ключ</option>
           <option value="off">Вимкнено — тільки VIN через держреєстр США</option>
-          <option value="apiauctions">apiauctions.io — потрібен ключ</option>
         </select>
+      </div>
+
+      <div id="ownBox" class="hide">
+        <div class="fld">
+          <label for="f_lotUrl">Адреса запиту від дилера</label>
+          <input id="f_lotUrl" type="text" placeholder="https://api.dealer.com/lot/{номер}"
+                 autocomplete="off" spellcheck="false">
+          <div class="exp">Впишіть <b>{номер}</b> там, де в адресі має стояти
+            номер лоту або VIN. Це слово застосунок замінить сам.</div>
+        </div>
+        <div class="fld">
+          <label for="f_keyWay">Як передається ключ</label>
+          <select id="f_keyWay">
+            <option value="none">Ключ не потрібен</option>
+            <option value="bearer">Заголовок Authorization: Bearer</option>
+            <option value="header">Свій заголовок</option>
+            <option value="query">У самій адресі, параметром</option>
+          </select>
+        </div>
+        <div class="fld hide" id="keyNameBox">
+          <label for="f_keyName">Назва заголовка або параметра</label>
+          <input id="f_keyName" type="text" placeholder="X-API-Key"
+                 autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+
+      <div class="fld">
+        <label for="tryV">Перевірити на номері лоту або VIN</label>
+        <div class="seek2">
+          <input id="tryV" type="text" placeholder="55123456" autocomplete="off">
+          <button type="button" class="btn sec sm" id="tryGo">Перевірити</button>
+        </div>
+        <div class="msg pre hide" id="tryMsg"></div>
       </div>
       <div class="msg inf">Навіть коли вимкнено, за VIN підтягнуться рік,
         обʼєм двигуна, паливо й тип кузова — це безкоштовний держреєстр США.
         Не буде лише майданчика, пробігу, пошкоджень і фотографій: їх знає
         тільки аукціон.<br><br>
-        Ключ доступу вписується не тут, а в Cloudflare: воркер art-avto →
+        Безкоштовний довідник — чужий сервер: його можуть прибрати
+        будь-коли. Якщо пошук раптом перестане знаходити лоти, перемкніть
+        сюди платний або вимкніть — калькулятор працюватиме далі.<br><br>
+        Ключ платного вписується не тут, а в Cloudflare: воркер art-avto →
         Settings → Variables and secrets → Secret з іменем
         <b>AUCTION_TOKEN</b>. У налаштуваннях він не зберігається, щоб не
         поїхав клієнтам разом з рештою.</div>
@@ -521,7 +563,11 @@ function drawAll() {
   drawShow();
 
   $('#useNbu').checked = !!CFG.useNbu;
-  $('#lotSrc').value = CFG.lotSrc || 'off';
+  $('#lotSrc').value = CFG.lotSrc || 'dir';
+  $('#f_lotUrl').value = CFG.lotUrl || '';
+  $('#f_keyWay').value = CFG.keyWay || 'none';
+  $('#f_keyName').value = CFG.keyName || '';
+  srcShow();
   if (NBU_NOW) {
     show('nbuNow', 'Курс НБУ: долар ' + NBU_NOW.usd + ', євро ' + NBU_NOW.eur +
       (NBU_NOW.day ? ' — на ' + NBU_NOW.day : ''), 'inf');
@@ -723,6 +769,9 @@ function collect() {
   b.feeMode = $('#feeMode').value;
   b.useNbu = $('#useNbu').checked;
   b.lotSrc = $('#lotSrc').value;
+  b.lotUrl = $('#f_lotUrl').value.trim();
+  b.keyWay = $('#f_keyWay').value;
+  b.keyName = $('#f_keyName').value.trim();
   b.hide = HIDE;
   b.fees = FEE;
   b.extras = EXTRAS;
@@ -1091,6 +1140,33 @@ $('#tabUndo').addEventListener('click', function () {
       if (a.ok) { CFG = a.cfg; LOC = a.loc; drawAll(); }
     });
   }).catch(function () { show('tabMsg', 'Сервер не відповідає', 'er'); });
+});
+
+/* Поля свого доступу показуємо лише коли він вибраний: інакше вони
+   лише плутають і виглядають як щось обовʼязкове. */
+function srcShow() {
+  var own = $('#lotSrc').value === 'own';
+  $('#ownBox').classList.toggle('hide', !own);
+  var way = $('#f_keyWay').value;
+  $('#keyNameBox').classList.toggle('hide', !(own && (way === 'header' || way === 'query')));
+}
+$('#lotSrc').addEventListener('change', srcShow);
+$('#f_keyWay').addEventListener('change', srcShow);
+
+$('#tryGo').addEventListener('click', function () {
+  var v = $('#tryV').value.trim();
+  if (!v) { show('tryMsg', 'Впишіть номер лоту або VIN для проби.', 'er'); return; }
+  show('tryMsg', 'Перевіряю…', 'inf');
+  api('/admin/trylot', { v: v }).then(function (d) {
+    if (!d.ok) return show('tryMsg', d.error || 'Не вдалось', 'er');
+    var c = d.car;
+    show('tryMsg',
+      'Знайшло: ' + (c.title || '—') + '\n' +
+      (c.branch ? 'Майданчик: ' + c.branch + '\n' : '') +
+      '\nПрийшло: ' + d.є.join(', ') +
+      (d.нема.length ? '\nНе прийшло: ' + d.нема.join(', ') : ''),
+      d.нема.indexOf('МАЙДАНЧИК') > -1 ? 'er' : 'ok');
+  }).catch(function () { show('tryMsg', 'Сервер не відповідає', 'er'); });
 });
 
 $('#hook').addEventListener('click', function () {
