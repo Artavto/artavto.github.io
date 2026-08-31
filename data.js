@@ -215,6 +215,7 @@ window.ART = {
     "site": "",
     "note": ""
   },
+  "lotSrc": "off",
   "hide": {}
 }
 };

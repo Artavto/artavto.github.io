@@ -672,15 +672,26 @@ function drawFound(q) {
     b.addEventListener('click', function () {
       S.loc = res[+b.dataset.i];
       S.port = null;
-      $('#q').value = '';
-      draw();
+      draw();                 // прибирання пошуку — на совісті drawPicked
     });
   });
 }
 
 function drawPicked() {
-  var box = $('#picked');
-  if (!S.loc) { box.innerHTML = ''; box.className = ''; return; }
+  var box = $('#picked'), q = $('#q'), found = $('#found');
+
+  /* Обраний майданчик і пошук — це два стани одного поля, а не два
+     поля. Раніше після вибору список результатів лишався висіти поруч
+     із карткою: людина бачила три речі там, де мала бачити одну. */
+  if (!S.loc) {
+    box.innerHTML = ''; box.className = '';
+    q.style.display = '';
+    return;
+  }
+  q.style.display = 'none';
+  q.value = '';
+  found.innerHTML = '';
+  found.className = 'found';
   var where = [S.loc.c, S.loc.z].filter(Boolean).join(' · ');
   box.className = 'picked';
   box.innerHTML = '<div><b>' + esc(S.loc.n) + '</b>' +
@@ -688,6 +699,9 @@ function drawPicked() {
     '<button type="button" id="unpick">змінити</button>';
   $('#unpick').addEventListener('click', function () {
     S.loc = null; S.port = null; draw();
+    /* Поле щойно зʼявилось — ставимо в нього курсор, щоб не треба було
+       ще раз тицяти. */
+    try { $('#q').focus(); } catch (e) {}
   });
 }
 

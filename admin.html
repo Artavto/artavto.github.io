@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=20260831-1200">
+<link rel="stylesheet" href="styles.css?v=20260831-1400">
 <style>
   /* Те, чого немає в калькуляторі: кнопки, повідомлення, зона для файла. */
   .btn{
@@ -350,6 +350,27 @@
     <div class="tab hide" data-t="bot">
 
     <div class="card glass">
+      <h2>Пошук авто за номером<u></u></h2>
+      <div class="exp" style="margin:0 0 12px">Звідки брати дані про лот,
+        коли клієнт вписує номер або VIN.</div>
+      <div class="fld">
+        <label for="lotSrc">Джерело</label>
+        <select id="lotSrc">
+          <option value="off">Вимкнено — тільки VIN через держреєстр США</option>
+          <option value="apiauctions">apiauctions.io — потрібен ключ</option>
+        </select>
+      </div>
+      <div class="msg inf">Навіть коли вимкнено, за VIN підтягнуться рік,
+        обʼєм двигуна, паливо й тип кузова — це безкоштовний держреєстр США.
+        Не буде лише майданчика, пробігу, пошкоджень і фотографій: їх знає
+        тільки аукціон.<br><br>
+        Ключ доступу вписується не тут, а в Cloudflare: воркер art-avto →
+        Settings → Variables and secrets → Secret з іменем
+        <b>AUCTION_TOKEN</b>. У налаштуваннях він не зберігається, щоб не
+        поїхав клієнтам разом з рештою.</div>
+    </div>
+
+    <div class="card glass">
       <h2>Контакти для клієнта<u></u></h2>
       <div class="exp" style="margin:0 0 12px">Показуються під розрахунком.
         Порожні поля не показуються взагалі.</div>
@@ -500,6 +521,7 @@ function drawAll() {
   drawShow();
 
   $('#useNbu').checked = !!CFG.useNbu;
+  $('#lotSrc').value = CFG.lotSrc || 'off';
   if (NBU_NOW) {
     show('nbuNow', 'Курс НБУ: долар ' + NBU_NOW.usd + ', євро ' + NBU_NOW.eur +
       (NBU_NOW.day ? ' — на ' + NBU_NOW.day : ''), 'inf');
@@ -700,6 +722,7 @@ function collect() {
   grabSteps(); grabFeeFields();
   b.feeMode = $('#feeMode').value;
   b.useNbu = $('#useNbu').checked;
+  b.lotSrc = $('#lotSrc').value;
   b.hide = HIDE;
   b.fees = FEE;
   b.extras = EXTRAS;
