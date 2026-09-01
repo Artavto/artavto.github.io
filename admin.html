@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=20260831-1910">
+<link rel="stylesheet" href="styles.css?v=20260901-1000">
 <style>
   /* Те, чого немає в калькуляторі: кнопки, повідомлення, зона для файла. */
   .btn{
@@ -283,9 +283,37 @@
         </div>
       </div>
 
-      <div class="msg inf" style="margin-top:14px">Ці цифри я поставив за
-        відкритими джерелами — вони наближені. Звірте зі своїм кабінетом
-        на аукціоні й виправте: саме за ними клієнт побачить суму.</div>
+      <div class="msg inf" style="margin-top:14px">Сходинки можна вписати
+        руками, а можна побудувати з реальних сум — блок нижче.</div>
+    </div>
+
+    <div class="card glass">
+      <h2>Побудувати з реальних сум<u></u></h2>
+      <div class="exp" style="margin:0 0 12px">Не треба рахувати сходинки
+        самому. Впишіть кілька пар «моя ставка → скільки вийшло» — так, як
+        це показує аукціон або як стоїть у рахунку. Шкала збудується сама.</div>
+
+      <div class="fld">
+        <label for="calcWhat">Друга цифра — це</label>
+        <select id="calcWhat">
+          <option value="total">Разом зі ставкою (як показує аукціон)</option>
+          <option value="fee">Тільки збори, без ставки</option>
+        </select>
+      </div>
+
+      <div id="pairBox"></div>
+      <div class="row2">
+        <button class="btn sec sm" id="pairAdd">Додати рядок</button>
+        <button class="btn sec sm" id="pairGo">Побудувати шкалу</button>
+      </div>
+      <div class="msg pre hide" id="pairMsg"></div>
+
+      <div class="exp" style="margin-top:12px">Між вписаними ставками
+        береться значення нижчої з них. Тобто якщо вписати $3 000 і
+        $4 000, то ставка $3 450 порахується як $3 000. Хочете точніше —
+        додайте більше пар.<br><br>
+        Ворота, екозбір і збір за ставку при цьому обнуляться: у сумі
+        аукціону вони вже враховані, інакше порахувались би двічі.</div>
     </div>
 
     </div><!-- /збори -->
@@ -583,6 +611,7 @@ function drawAll() {
   $('#feeMode').value = CFG.feeMode === 'manual' ? 'manual' : 'table';
   $('#aucPick').value = AUC_NOW;
   drawSteps();
+  drawPairs();
   drawExtras();
 
   var c = CFG.contacts || {};
@@ -742,6 +771,87 @@ var ROWS = [
 ];
 
 var HIDE = {};
+
+/* ------------------------------------------------------------------
+   Побудова шкали з реальних сум
+   ------------------------------------------------------------------ */
+/* Власник бачить в аукціоні «ставка → разом», а нам треба «до суми →
+   збір». Це перетворення я один раз робив руками й ледь не помилився на
+   межах — тому воно тут, а не в голові людини. */
+var PAIRS = [];
+
+function drawPairs() {
+  if (!PAIRS.length) PAIRS = [{ b: '', v: '' }, { b: '', v: '' }, { b: '', v: '' }];
+  $('#pairBox').innerHTML = PAIRS.map(function (p, i) {
+    return '<div class="line" data-i="' + i + '">' +
+      '<span class="cap">ставка $</span>' +
+      '<input class="pb" type="text" inputmode="decimal" value="' + esc(p.b) + '">' +
+      '<span class="cap">вийшло $</span>' +
+      '<input class="pv" type="text" inputmode="decimal" value="' + esc(p.v) + '">' +
+      '<button type="button" class="x" title="прибрати">×</button>' +
+    '</div>';
+  }).join('');
+
+  [].forEach.call($('#pairBox').querySelectorAll('.line'), function (row) {
+    var i = +row.dataset.i;
+    row.querySelector('.pb').addEventListener('input', function () { PAIRS[i].b = this.value; });
+    row.querySelector('.pv').addEventListener('input', function () { PAIRS[i].v = this.value; });
+    row.querySelector('.x').addEventListener('click', function () {
+      PAIRS.splice(i, 1); drawPairs();
+    });
+  });
+}
+
+function числo(v) {
+  var n = parseFloat(String(v == null ? '' : v).replace(',', '.').replace(/[^\d.]/g, ''));
+  return isFinite(n) ? n : null;
+}
+
+function buildSteps() {
+  var разом = $('#calcWhat').value === 'total';
+  var пари = [];
+
+  for (var i = 0; i < PAIRS.length; i++) {
+    var b = числo(PAIRS[i].b), v = числo(PAIRS[i].v);
+    if (b === null || v === null || b <= 0) continue;
+    var збір = разом ? (v - b) : v;
+    if (збір < 0) {
+      show('pairMsg', 'У рядку зі ставкою ' + b + ' друга цифра менша за ставку. ' +
+        'Якщо ви вписуєте тільки збори — перемкніть це у списку вище.', 'er');
+      return;
+    }
+    пари.push([Math.round(b), Math.round(збір)]);
+  }
+
+  if (пари.length < 2) {
+    show('pairMsg', 'Потрібно щонайменше дві пари, щоб було з чого будувати.', 'er');
+    return;
+  }
+
+  пари.sort(function (x, y) { return x[0] - y[0]; });
+
+  /* Межа сходинки — на одиницю нижче наступної вписаної ставки. Так
+     ставка між двома зразками рахується за нижчим, а кожен вписаний
+     зразок відтворюється точно. */
+  var steps = [];
+  for (var j = 0; j < пари.length; j++) {
+    var до = (j + 1 < пари.length) ? (пари[j + 1][0] - 1) : пари[j][0];
+    steps.push([до, пари[j][1]]);
+  }
+
+  var остання = пари[пари.length - 1];
+  var pct = Math.round(остання[1] / остання[0] * 1000) / 10;
+
+  FEE[AUC_NOW] = { steps: steps, pct: pct, gate: 0, env: 0, bid: 0 };
+  drawSteps();
+
+  show('pairMsg',
+    'Побудовано ' + steps.length + ' сходинок для «' +
+    $('#aucPick').options[$('#aucPick').selectedIndex].text + '».\n' +
+    'Понад ' + остання[0] + ' береться ' + pct + '%.\n' +
+    'Ворота, екозбір і збір за ставку обнулені.\n\n' +
+    'Перевірте вгорі й натисніть «Зберегти» внизу.', 'ok');
+}
 
 function drawShow() {
   var out = [];
@@ -1148,6 +1258,11 @@ $('#aucPick').addEventListener('change', function () {
   AUC_NOW = this.value;
   drawSteps();
 });
+$('#pairAdd').addEventListener('click', function () {
+  PAIRS.push({ b: '', v: '' }); drawPairs();
+});
+$('#pairGo').addEventListener('click', buildSteps);
+
 $('#stepDef').addEventListener('click', function () {
   if (!DEF || !DEF.fees || !DEF.fees[AUC_NOW]) return;
   if (!confirm('Замінити шкалу цього аукціону на стандартну з оновлення?')) return;
