@@ -739,17 +739,35 @@ function drawPorts() {
     return;
   }
   var have = PORTS.filter(function (p) { return S.loc.p && S.loc.p[p]; });
+  var ask  = PORTS.filter(function (p) { return !(S.loc.p && S.loc.p[p]); });
+
   if (!have.length) {
     box.className = 'nogo';
-    box.textContent = 'З цього майданчика ціни доставки немає в таблиці. ' +
-                      'Уточніть у партнерів.';
+    box.textContent = 'З цього майданчика стандартних цін у таблиці немає. ' +
+                      'Возять за запитом — уточніть у партнерів, буде дорожче ' +
+                      'і довше шукати водія.';
     return;
   }
+
+  /* Порожня клітинка в таблиці — це НЕ «туди не возимо». Дилер уточнив
+     31.08.2026: возять, але не за стандартом — за запитом, дорожче й
+     довше. Тому такі порти показуємо, лише не даємо на них рахувати:
+     ціни в нас немає, а вигадувати її не можна. */
   box.className = 'ports';
-  box.innerHTML = have.map(function (p) {
-    return '<button type="button" data-p="' + p + '"' + (S.port === p ? ' class="on"' : '') +
-      '><b>' + esc(portTitle(p)) + '</b><i>' + money(S.loc.p[p]) + '</i></button>';
-  }).join('');
+  box.innerHTML =
+    have.map(function (p) {
+      return '<button type="button" data-p="' + p + '"' + (S.port === p ? ' class="on"' : '') +
+        '><b>' + esc(portTitle(p)) + '</b><i>' + money(S.loc.p[p]) + '</i></button>';
+    }).join('') +
+    ask.map(function (p) {
+      return '<div class="port-ask"><b>' + esc(portTitle(p)) + '</b>' +
+        '<i>за запитом</i></div>';
+    }).join('') +
+    (ask.length
+      ? '<div class="hint">Порти без ціни — не стандартний напрямок. Возять, ' +
+        'але дорожче й довше шукати водія. Уточніть окремо.</div>'
+      : '');
+
   [].forEach.call(box.querySelectorAll('button'), function (b) {
     b.addEventListener('click', function () { S.port = b.dataset.p; draw(); });
   });
