@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=20260831-1800">
+<link rel="stylesheet" href="styles.css?v=20260831-1910">
 <style>
   /* Те, чого немає в калькуляторі: кнопки, повідомлення, зона для файла. */
   .btn{
@@ -31,6 +31,8 @@
   .msg.inf{background:rgba(24,88,152,.09);color:var(--blue)}
   .msg.hide{display:none}
   .msg.pre{white-space:pre-wrap}
+  .exp.nowd{color:#8A5A12}
+  .exp.nowd a{color:var(--blue);font-weight:600}
   .hide{display:none}
   .seek2{display:flex;gap:9px}
   .seek2 input{flex:1;min-width:0}
@@ -257,7 +259,10 @@
       </div>
 
       <div id="stepBox"></div>
-      <button class="btn sec sm" id="stepAdd">Додати сходинку</button>
+      <div class="row2">
+        <button class="btn sec sm" id="stepAdd">Додати сходинку</button>
+        <button class="btn sec sm" id="stepDef">Взяти стандартну шкалу</button>
+      </div>
 
       <div class="two" style="margin-top:16px">
         <div class="fld">
@@ -470,7 +475,7 @@
 
 var API = 'https://art-avto.tovartauto.workers.dev';
 var $ = function (s) { return document.querySelector(s); };
-var KEY = '', CFG = null, LOC = null, NBU_NOW = null;
+var KEY = '', CFG = null, LOC = null, NBU_NOW = null, DEF = null;
 
 function show(id, text, kind) {
   var e = $('#' + id);
@@ -517,9 +522,36 @@ var CU = [
 ];
 var FX = [['usd', 'Долар до гривні'], ['eur', 'Євро до гривні']];
 
+/* Де збережене розійшлося зі стандартним — кажемо прямо. Інакше нові
+   цифри з оновлень до власника не доходять: збережене головніше, і він
+   ніяк не дізнається, що стандартне змінилось. */
+function стандартне(id) {
+  if (!DEF) return null;
+  /* Курси не звіряємо: коли ввімкнено НБУ, вони й МАЮТЬ відрізнятись від
+     запасних у коді. Підказка «взяти 44.6» тут означала б замінити
+     сьогоднішній курс на торішній. */
+  if (id === 'usd' || id === 'eur') return null;
+  var карта = {
+    closedFee: ['closedStates', 'fee'], closedList: ['closedStates', 'states'],
+    pSmall: ['exPetrol', 'small'], pBig: ['exPetrol', 'big'],
+    dSmall: ['exDiesel', 'small'], dBig: ['exDiesel', 'big'],
+  };
+  if (id.indexOf('sea_') === 0) return DEF.sea[id.slice(4)];
+  if (карта[id]) {
+    var v = DEF[карта[id][0]];
+    v = v ? v[карта[id][1]] : null;
+    return Array.isArray(v) ? v.join(', ') : v;
+  }
+  return DEF[id];
+}
+
 function fld(id, label, val, exp) {
+  var d = стандартне(id);
+  var різне = d !== null && d !== undefined && String(d) !== String(val);
   return '<div class="fld"><label for="f_' + id + '">' + esc(label) + '</label>' +
     '<input id="f_' + id + '" type="text" inputmode="decimal" value="' + esc(val) + '">' +
+    (різне ? '<div class="exp nowd">Стандартне зараз: <b>' + esc(d) + '</b> — ' +
+      '<a href="#" data-take="' + id + '" data-val="' + esc(d) + '">взяти</a></div>' : '') +
     (exp ? '<div class="exp">' + esc(exp) + '</div>' : '') + '</div>';
 }
 
@@ -750,6 +782,17 @@ function drawShow() {
     });
   });
 }
+
+/* Натискання «взяти» підставляє стандартне значення в поле. Не зберігає
+   само: людина має побачити, що змінилось, і натиснути «Зберегти». */
+document.addEventListener('click', function (e) {
+  var a = e.target && e.target.closest && e.target.closest('a[data-take]');
+  if (!a) return;
+  e.preventDefault();
+  var f = $('#f_' + a.dataset.take);
+  if (f) { f.value = a.dataset.val; f.focus(); }
+  a.parentNode.innerHTML = 'Взято — натисніть «Зберегти» внизу.';
+});
 
 function val(id) { var e = $('#f_' + id); return e ? e.value.trim() : ''; }
 
@@ -1042,7 +1085,7 @@ function enter() {
     $('#go').disabled = false;
     if (!d.ok) { show('gateErr', d.error || 'Не вдалося увійти', 'er'); return; }
     try { sessionStorage.setItem('artKey', KEY); } catch (e) {}
-    CFG = d.cfg; LOC = d.loc; NBU_NOW = d.nbu || null;
+    CFG = d.cfg; LOC = d.loc; NBU_NOW = d.nbu || null; DEF = d.def || null;
     if (d.weak) {
       show('weak', 'Пароль закороткий — менше 12 знаків. Його можна підібрати ' +
         'за добу. Змініть у Cloudflare: воркер art-avto → Settings → Variables ' +
@@ -1105,6 +1148,14 @@ $('#aucPick').addEventListener('change', function () {
   AUC_NOW = this.value;
   drawSteps();
 });
+$('#stepDef').addEventListener('click', function () {
+  if (!DEF || !DEF.fees || !DEF.fees[AUC_NOW]) return;
+  if (!confirm('Замінити шкалу цього аукціону на стандартну з оновлення?')) return;
+  FEE[AUC_NOW] = JSON.parse(JSON.stringify(DEF.fees[AUC_NOW]));
+  drawSteps();
+  show('saveMsg', 'Шкалу підставлено. Перевірте й натисніть «Зберегти».', 'inf');
+});
+
 $('#stepAdd').addEventListener('click', function () {
   grabSteps();
   var st = FEE[AUC_NOW].steps;
