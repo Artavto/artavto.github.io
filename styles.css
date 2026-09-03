@@ -496,3 +496,38 @@ select{
   letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;
 }
 .ports .hint{margin-top:2px}
+
+/* ── заглушка до оплати ── */
+#hold{
+  position:fixed;inset:0;z-index:100;
+  display:flex;align-items:center;justify-content:center;padding:24px;
+  background:var(--bg-base);
+}
+#hold::before{
+  content:"";position:fixed;inset:-20% 0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(38% 32% at 18% 8%,   var(--bg1) 0%, transparent 68%),
+    radial-gradient(44% 36% at 90% 2%,   var(--bg2) 0%, transparent 70%),
+    radial-gradient(46% 38% at 6% 74%,   var(--bg3) 0%, transparent 70%),
+    var(--bg-base);
+  filter:blur(44px);
+}
+.hold-card{
+  position:relative;max-width:360px;width:100%;text-align:center;
+  background:var(--glass-b);border:1px solid var(--glass-line);
+  border-radius:var(--r);padding:34px 26px 28px;
+  box-shadow:var(--sh);
+}
+.hold-logo{height:30px;width:auto;display:block;margin:0 auto 22px}
+.hold-card b{
+  display:block;font-family:"Onest",system-ui,sans-serif;
+  font-size:22px;font-weight:600;letter-spacing:-.02em;color:var(--text);
+}
+.hold-card p{margin:12px 0 0;font-size:14px;line-height:1.55;color:var(--text2)}
+.hold-card .hold-hi{
+  margin-top:16px;padding:11px 14px;border-radius:var(--r-in);
+  background:rgba(24,88,152,.08);color:var(--blue);font-weight:500;font-size:13.5px;
+}
+.hold-card small{
+  display:block;margin-top:18px;font-size:11.5px;color:var(--mut);line-height:1.5;
+}

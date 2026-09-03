@@ -1063,6 +1063,24 @@ function start() {
   draw();
 }
 
+/* Заглушка до оплати. Стоїть ПЕРЕД запуском калькулятора: якщо ввімкнена,
+   решта навіть не малюється. Так немає способу глянути розрахунок,
+   прибравши напис зі сторінки, — калькулятор просто не стартує.
+
+   Вмикається/вимикається одним рядком window.ART_HOLD у index.html.
+   Усе решта коду недоторкане, тож зняти заглушку — це знову false. */
+if (window.ART_HOLD) {
+  try {
+    var hold = document.getElementById('hold');
+    var wrap = document.querySelector('.wrap');
+    if (hold) hold.hidden = false;
+    if (wrap) wrap.hidden = true;
+    document.body.style.overflow = 'hidden';
+    var tgh = window.Telegram && window.Telegram.WebApp;
+    if (tgh) { tgh.ready(); tgh.expand(); }
+  } catch (e) {}
+} else {
+
 /* Telegram відкриває це як міні-застосунок; у звичайному браузері
    просто працює як сторінка. */
 try {
@@ -1100,4 +1118,6 @@ window.__art = {
   get S() { return S; }, get CFG() { return CFG; }, get LOC() { return LOC; },
   calc: calc, draw: draw,
 };
+
+}  /* кінець «якщо не ввімкнена заглушка» */
 })();

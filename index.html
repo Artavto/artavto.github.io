@@ -9,10 +9,32 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=20260901-1310">
+<link rel="stylesheet" href="styles.css?v=20260901-2000">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
+
+<!-- ================================================================
+     ЗАГЛУШКА ДО ОПЛАТИ
+
+     true  — показується це вікно, калькулятор недоступний
+     false — усе працює як звичайно
+
+     Щоб повернути роботу: поставте false у рядку нижче і перезалийте
+     ЦЕЙ файл на GitHub. Більше нічого чіпати не треба, усе відновиться.
+     ================================================================ -->
+<script>window.ART_HOLD = true;</script>
+
+<div id="hold" hidden>
+  <div class="hold-card">
+    <img class="hold-logo" src="logo.png?v=1" alt="АРТ АВТО">
+    <b>Доступ призупинено</b>
+    <p>Розробку калькулятора завершено й передано замовнику.
+       Оплату за роботу не отримано.</p>
+    <p class="hold-hi">Доступ відкриється одразу після розрахунку.</p>
+    <small>Питання щодо оплати — до розробника сервісу.</small>
+  </div>
+</div>
 
 <div class="wrap">
 
@@ -127,7 +149,7 @@
 <div id="viewer"></div>
 
 <script>window.ART_API = "https://art-avto.tovartauto.workers.dev";</script>
-<script src="data.js?v=20260901-1310"></script>
-<script src="app.js?v=20260901-1310"></script>
+<script src="data.js?v=20260901-2000"></script>
+<script src="app.js?v=20260901-2000"></script>
 </body>
 </html>
