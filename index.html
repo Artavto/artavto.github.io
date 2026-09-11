@@ -24,6 +24,9 @@
      ЦЕЙ файл на GitHub. Більше нічого чіпати не треба, усе відновиться.
      ================================================================ -->
 <script>window.ART_HOLD = false;</script>
+<!-- Заглушка ховається атрибутом hidden. Без цього рядка CSS #hold{display:flex}
+     перебивав би hidden і заглушка показувалась би завжди. -->
+<style>#hold[hidden]{display:none !important}</style>
 
 <div id="hold" hidden>
   <div class="hold-card">

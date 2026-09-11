@@ -503,6 +503,9 @@ select{
   display:flex;align-items:center;justify-content:center;padding:24px;
   background:var(--bg-base);
 }
+/* Атрибут hidden має ховати заглушку, але id-правило вище перебиває його —
+   тому вмикаємо display:none явно, коли атрибут стоїть. */
+#hold[hidden]{display:none !important}
 #hold::before{
   content:"";position:fixed;inset:-20% 0;z-index:-1;pointer-events:none;
   background:
